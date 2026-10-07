@@ -5,7 +5,8 @@
 .login-view { min-height: 100vh; padding: 24px; display: grid; place-items: center; background: linear-gradient(135deg, var(--black) 0 52%, var(--yellow) 52% 100%); }
 .login-card { width: min(460px, 100%); padding: clamp(28px, 5vw, 44px); background: var(--white); border: 2px solid var(--black); border-radius: 22px; box-shadow: 10px 10px 0 rgba(17, 17, 17, .42); }
 .admin-brand { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 34px; color: var(--black); text-decoration: none; }
-.admin-brand .brand-copy small { color: var(--gray-600); }
+.admin-brand-text { font-size: 1rem; font-weight: 950; letter-spacing: -.025em; }
+.admin-brand-text span { margin-left: 7px; color: var(--gray-600); font-size: .72rem; font-weight: 850; letter-spacing: .12em; }
 .login-card h1, .admin-title-row h1 { margin-bottom: 10px; font-size: clamp(2.2rem, 6vw, 4rem); line-height: 1; letter-spacing: -.055em; }
 .login-copy, .admin-intro { color: var(--gray-600); }
 .login-card .field { margin-top: 18px; }
@@ -15,7 +16,7 @@
 .dashboard-view[hidden], .login-view[hidden] { display: none; }
 .admin-header { min-height: 78px; padding: 12px clamp(18px, 4vw, 64px); display: flex; align-items: center; justify-content: space-between; gap: 24px; color: var(--white); background: var(--black); border-bottom: 4px solid var(--yellow); }
 .admin-header .admin-brand { margin: 0; color: var(--white); }
-.admin-header .brand-copy small { color: #bdbdb7; }
+.admin-header .admin-brand-text span { color: var(--yellow); }
 .admin-account { display: flex; align-items: center; gap: 18px; color: #d6d6d0; font-size: .86rem; }
 .admin-account strong { color: var(--yellow); }
 .admin-content { width: min(1240px, 100%); margin: 0 auto; padding: 42px clamp(16px, 4vw, 54px) 64px; }
