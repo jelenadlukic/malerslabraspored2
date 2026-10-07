@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#111111">
+  <title>Admin panel — Mejkers Lab</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23f5ce00'/%3E%3Cpath d='M15 45V19h9l8 11 8-11h9v26h-9V32l-8 10-8-10v13z' fill='%23111111'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin-body">
+  <main class="admin-page">
+    <section class="login-view" id="login-view" aria-labelledby="login-title">
+      <form class="login-card" id="login-form">
+        <a class="admin-brand" href="/" aria-label="Nazad na raspored">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span class="brand-copy"><strong>MEJKERS LAB</strong><small>ADMIN PANEL</small></span>
+        </a>
+        <p class="section-kicker">Zaštićen pristup</p>
+        <h1 id="login-title">Prijava</h1>
+        <p class="login-copy">Prijavite se da biste uređivali i brisali rezervacije.</p>
+        <label class="field">
+          <span>Korisničko ime</span>
+          <input name="username" type="text" autocomplete="username" required placeholder="Korisničko ime">
+        </label>
+        <label class="field">
+          <span>Lozinka</span>
+          <input name="password" type="password" autocomplete="current-password" required placeholder="Lozinka">
+        </label>
+        <p class="form-error" id="login-error" role="alert"></p>
+        <button class="primary-button full-width" type="submit">Prijavi se</button>
+        <a class="back-link" href="/">Nazad na javni raspored</a>
+      </form>
+    </section>
+
+    <section class="dashboard-view" id="dashboard-view" hidden>
+      <header class="admin-header">
+        <a class="admin-brand" href="/" aria-label="Nazad na raspored">
+          <span class="brand-mark" aria-hidden="true">M</span>
+          <span class="brand-copy"><strong>MEJKERS LAB</strong><small>ADMIN PANEL</small></span>
+        </a>
+        <div class="admin-account">
+          <span>Prijavljen: <strong id="admin-username"></strong></span>
+          <button class="secondary-button" id="logout-button" type="button">Odjavi se</button>
+        </div>
+      </header>
+
+      <div class="admin-content">
+        <div class="admin-title-row">
+          <div>
+            <p class="section-kicker">Upravljanje rasporedom</p>
+            <h1>Sve rezervacije</h1>
+            <p class="admin-intro">Izmenite podatke ili termine, odnosno obrišite rezervaciju koja više nije potrebna.</p>
+          </div>
+          <div class="booking-total"><strong id="booking-count">0</strong><span>rezervacija</span></div>
+        </div>
+
+        <div class="admin-toolbar">
+          <label class="search-field">
+            <span class="sr-only">Pretraži rezervacije</span>
+            <input id="booking-search" type="search" placeholder="Pretraži nastavnika ili svrhu…">
+          </label>
+          <button class="secondary-button" id="refresh-button" type="button">Osveži</button>
+        </div>
+
+        <p class="admin-message" id="admin-message" role="status"></p>
+        <div class="bookings-list" id="bookings-list" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="admin-dialog" id="edit-dialog">
+    <form class="admin-dialog-card" id="edit-form">
+      <button class="dialog-close" id="close-edit" type="button" aria-label="Zatvori prozor">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <p class="section-kicker">Izmena rezervacije</p>
+      <h2>Podaci i termini</h2>
+      <input name="id" type="hidden">
+      <label class="field">
+        <span>Ime i prezime nastavnika</span>
+        <input name="teacher" type="text" required minlength="3" maxlength="80">
+      </label>
+      <label class="field">
+        <span>Svrha upotrebe učionice</span>
+        <textarea name="purpose" required minlength="3" maxlength="240" rows="3"></textarea>
+      </label>
+      <label class="field compact-field">
+        <span>Broj učenika</span>
+        <input name="students" type="number" required min="1" max="40">
+      </label>
+      <div class="slots-editor-header">
+        <span>Termini</span>
+        <button class="text-button" id="add-slot" type="button">+ Dodaj termin</button>
+      </div>
+      <div class="slots-editor" id="slots-editor"></div>
+      <p class="field-help">Može biti od jednog do tri termina. Novi datum mora biti u trenutno otvorenom periodu.</p>
+      <p class="form-error" id="edit-error" role="alert"></p>
+      <button class="primary-button full-width" type="submit">Sačuvaj izmene</button>
+    </form>
+  </dialog>
+
+  <dialog class="admin-dialog" id="delete-dialog">
+    <div class="delete-card">
+      <span class="warning-mark" aria-hidden="true">!</span>
+      <h2>Obrisati rezervaciju?</h2>
+      <p id="delete-copy">Ova radnja se ne može poništiti.</p>
+      <div class="delete-actions">
+        <button class="secondary-button" id="cancel-delete" type="button">Odustani</button>
+        <button class="danger-button" id="confirm-delete" type="button">Obriši rezervaciju</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="admin-toast" role="status" aria-live="polite" hidden>
+    <span class="toast-icon" aria-hidden="true">✓</span>
+    <div><strong id="admin-toast-title">Sačuvano</strong><span id="admin-toast-copy"></span></div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

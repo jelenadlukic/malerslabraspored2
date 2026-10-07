@@ -5,7 +5,7 @@
   "description": "Netlify aplikacija za raspored i rezervacije Mejkers Lab učionice",
   "type": "module",
   "scripts": {
-    "build": "node --check dist/app.js && node --check netlify/functions/bookings.mjs",
+    "build": "node --check dist/app.js && node --check dist/admin.js && node --check netlify/functions/bookings.mjs && node --check netlify/functions/admin-auth.mjs && node --check netlify/functions/admin-bookings.mjs && node --check netlify/functions/_shared/admin-session.mjs",
     "check": "npm run build"
   },
   "dependencies": {

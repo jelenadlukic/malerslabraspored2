@@ -7,6 +7,30 @@
   node_bundler = "esbuild"
 
 [[redirects]]
+  from = "/adminpanel"
+  to = "/adminpanel.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/adminpanel/"
+  to = "/adminpanel.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/session"
+  to = "/.netlify/functions/admin-auth"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/admin/bookings"
+  to = "/.netlify/functions/admin-bookings"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/bookings"
   to = "/.netlify/functions/bookings"
   status = 200
@@ -20,3 +44,8 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
     Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+
+[[headers]]
+  for = "/adminpanel*"
+  [headers.values]
+    Cache-Control = "no-store"
