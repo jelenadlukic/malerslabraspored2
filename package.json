@@ -1,0 +1,17 @@
+{
+  "name": "mejkers-lab-raspored",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Netlify aplikacija za raspored i rezervacije Mejkers Lab učionice",
+  "type": "module",
+  "scripts": {
+    "build": "node --check dist/app.js && node --check netlify/functions/bookings.mjs",
+    "check": "npm run build"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

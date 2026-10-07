@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="sr-Latn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5ce00">
+  <meta name="description" content="Pregled i rezervacija termina za Mejkers Lab učionicu.">
+  <title>Mejkers Lab — raspored</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23f5ce00'/%3E%3Cpath d='M15 45V19h9l8 11 8-11h9v26h-9V32l-8 10-8-10v13z' fill='%23111111'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#raspored">Pređi na raspored</a>
+
+  <header class="site-header">
+    <div class="brand" aria-label="Mejkers Lab raspored">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span class="brand-copy"><strong>MEJKERS LAB</strong><small>RASPORED</small></span>
+    </div>
+    <div class="header-meta" id="connection-status">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span>Učitavanje rasporeda…</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">Rezervacije učionice</p>
+        <h1 id="page-title">Kada je Mejkers Lab slobodan?</h1>
+        <p class="intro-copy">Izaberi do tri slobodna termina i ostavi podatke za rezervaciju. Vikendi nisu prikazani.</p>
+      </div>
+      <div class="date-card" aria-label="Period rezervacija">
+        <span>Rezervacije su otvorene</span>
+        <strong>14 dana unapred</strong>
+      </div>
+    </section>
+
+    <section class="schedule-shell" id="raspored" aria-labelledby="schedule-title">
+      <div class="schedule-toolbar">
+        <div>
+          <p class="section-kicker">Dostupnost učionice</p>
+          <h2 id="schedule-title">Raspored termina</h2>
+        </div>
+        <div class="week-switcher" aria-label="Izbor nedelje">
+          <button class="icon-button" id="prev-week" type="button" aria-label="Prethodna nedelja">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <button class="week-label" id="week-label" type="button" aria-label="Trenutno prikazana nedelja"></button>
+          <button class="icon-button" id="next-week" type="button" aria-label="Sledeća nedelja">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="legend" aria-label="Legenda statusa termina">
+        <span><i class="legend-swatch available"></i>Slobodno</span>
+        <span><i class="legend-swatch selected"></i>Izabrano</span>
+        <span><i class="legend-swatch booked"></i>Zauzeto</span>
+      </div>
+
+      <div class="mobile-days" id="mobile-days" role="tablist" aria-label="Izaberi dan"></div>
+      <div class="schedule-grid" id="schedule-grid" aria-live="polite"></div>
+
+      <div class="selection-bar" id="selection-bar" hidden>
+        <div>
+          <span class="selection-count" id="selection-count">0/3</span>
+          <div>
+            <strong id="selection-title">Izabrani termini</strong>
+            <p id="selection-summary"></p>
+          </div>
+        </div>
+        <button class="primary-button" id="open-booking" type="button">Nastavi na rezervaciju</button>
+      </div>
+    </section>
+
+    <p class="storage-note"><strong>Zajednički raspored:</strong> rezervacije se čuvaju na školskom serveru i automatski osvežavaju na svim uređajima.</p>
+  </main>
+
+  <dialog class="booking-dialog" id="booking-dialog">
+    <form class="dialog-card" id="booking-form">
+      <button class="dialog-close" id="close-booking" type="button" aria-label="Zatvori prozor">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <p class="section-kicker">Potvrda rezervacije</p>
+      <h2>Podaci o času</h2>
+      <div class="chosen-slots" id="chosen-slots"></div>
+
+      <label class="field">
+        <span>Ime i prezime nastavnika</span>
+        <input name="teacher" type="text" autocomplete="name" required minlength="3" placeholder="npr. Ana Petrović">
+      </label>
+      <label class="field">
+        <span>Svrha upotrebe učionice</span>
+        <textarea name="purpose" required minlength="3" rows="3" placeholder="npr. Čas robotike"></textarea>
+      </label>
+      <label class="field compact-field">
+        <span>Planirani broj učenika</span>
+        <input name="students" type="number" inputmode="numeric" required min="1" max="40" placeholder="24">
+      </label>
+      <p class="form-error" id="form-error" role="alert"></p>
+      <button class="primary-button full-width" type="submit">Potvrdi rezervaciju</button>
+      <p class="privacy-copy">Podaci služe isključivo za organizaciju korišćenja učionice.</p>
+    </form>
+  </dialog>
+
+  <dialog class="details-dialog" id="details-dialog">
+    <div class="details-card">
+      <button class="dialog-close" id="close-details" type="button" aria-label="Zatvori detalje">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <span class="booked-badge">Zauzeto</span>
+      <h2 id="details-title">Detalji rezervacije</h2>
+      <dl id="details-content"></dl>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span class="toast-icon" aria-hidden="true">✓</span>
+    <div><strong>Termin je rezervisan</strong><span id="toast-copy"></span></div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
