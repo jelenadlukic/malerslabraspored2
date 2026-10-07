@@ -76,7 +76,7 @@
   function formatSlot(date, hour, long = false) {
     const dayIndex = (date.getDay() + 6) % 7;
     const day = long ? DAYS[dayIndex] : DAY_SHORT[dayIndex];
-    return `${day}, ${date.getDate()}. ${MONTHS_GENITIVE[date.getMonth()]} · ${String(hour).padStart(2, "0")}:00–${String(hour + 1).padStart(2, "0")}:00`;
+    return `${day}, ${date.getDate()}. ${MONTHS_GENITIVE[date.getMonth()]} · ${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00`;
   }
 
   function setConnection(state, text) {
@@ -173,7 +173,7 @@
           disabled = " disabled";
         }
         const action = booking ? `Prikaži rezervaciju: ${booking.teacher}` : picked ? "Ukloni iz izbora" : "Izaberi termin";
-        html += `<button class="${className}" type="button" data-slot="${id}" data-time="${String(hour).padStart(2, "0")}:00–${String(hour + 1).padStart(2, "0")}:00" aria-label="${escapeHtml(formatSlot(date, hour, true))} — ${escapeHtml(action)}"${disabled}>${label}</button>`;
+        html += `<button class="${className}" type="button" data-slot="${id}" data-time="${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00" aria-label="${escapeHtml(formatSlot(date, hour, true))} — ${escapeHtml(action)}"${disabled}>${label}</button>`;
       });
     });
     grid.innerHTML = html;
