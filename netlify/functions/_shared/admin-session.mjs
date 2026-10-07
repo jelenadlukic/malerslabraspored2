@@ -12,7 +12,7 @@ function safeEqual(left, right) {
 }
 
 function getSecret() {
-  return process.env.ADMIN_PASSWORD || "";
+  return process.env.MEJKERS_PRISTUP || "";
 }
 
 function signature(value, secret) {

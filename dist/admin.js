@@ -20,6 +20,8 @@
   const DAYS = ["Ned", "Pon", "Uto", "Sre", "Čet", "Pet", "Sub"];
   const MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
   const HOURS = Array.from({ length: 11 }, (_, index) => index + 7);
+  const ADMIN_AUTH_URL = "/.netlify/functions/admin-auth";
+  const ADMIN_BOOKINGS_URL = "/.netlify/functions/admin-bookings";
   let bookings = [];
   let pendingDeleteId = null;
   let toastTimer;
@@ -65,7 +67,7 @@
 
   async function checkSession() {
     try {
-      const session = await api("/api/admin/session");
+      const session = await api(ADMIN_AUTH_URL);
       showDashboard(session.username);
       await loadBookings();
     } catch {
@@ -76,7 +78,7 @@
   async function loadBookings() {
     adminMessage.textContent = "Učitavanje rezervacija…";
     try {
-      const data = await api("/api/admin/bookings");
+      const data = await api(ADMIN_BOOKINGS_URL);
       bookings = Array.isArray(data.bookings) ? data.bookings : [];
       adminUsername.textContent = data.username || adminUsername.textContent;
       adminMessage.textContent = "";
@@ -167,7 +169,7 @@
     button.disabled = true;
     button.textContent = "Prijavljivanje…";
     try {
-      const session = await api("/api/admin/session", { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) });
+      const session = await api(ADMIN_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) });
       loginForm.reset();
       showDashboard(session.username);
       await loadBookings();
@@ -180,7 +182,7 @@
   });
 
   document.querySelector("#logout-button").addEventListener("click", async () => {
-    await api("/api/admin/session", { method: "DELETE" }).catch(() => {});
+    await api(ADMIN_AUTH_URL, { method: "DELETE" }).catch(() => {});
     bookings = [];
     showLogin();
   });
@@ -212,7 +214,7 @@
     button.disabled = true;
     button.textContent = "Čuvanje…";
     try {
-      await api(`/api/admin/bookings?id=${encodeURIComponent(form.get("id"))}`, { method: "PATCH", body: JSON.stringify(payload) });
+      await api(`${ADMIN_BOOKINGS_URL}?id=${encodeURIComponent(form.get("id"))}`, { method: "PATCH", body: JSON.stringify(payload) });
       editDialog.close();
       await loadBookings();
       showToast("Izmene su sačuvane", payload.teacher);
@@ -232,7 +234,7 @@
     button.disabled = true;
     button.textContent = "Brisanje…";
     try {
-      await api(`/api/admin/bookings?id=${encodeURIComponent(pendingDeleteId)}`, { method: "DELETE" });
+      await api(`${ADMIN_BOOKINGS_URL}?id=${encodeURIComponent(pendingDeleteId)}`, { method: "DELETE" });
       pendingDeleteId = null;
       deleteDialog.close();
       await loadBookings();
