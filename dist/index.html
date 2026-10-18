@@ -10,32 +10,58 @@
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-  <a class="skip-link" href="#raspored">Pređi na raspored</a>
+  <a class="skip-link" href="#view-raspored">Pređi na sadržaj</a>
 
   <header class="site-header">
     <div class="brand" aria-label="Mejkers Lab raspored">
       <span class="brand-copy"><strong>MEJKERS LAB</strong><small>RASPORED</small></span>
     </div>
-    <div class="header-meta" id="connection-status">
-      <span class="status-dot" aria-hidden="true"></span>
-      <span>Učitavanje rasporeda…</span>
+    <div class="header-actions" id="header-actions" hidden>
+      <nav class="header-nav" aria-label="Glavna navigacija">
+        <a class="is-active" href="#raspored" data-page-link="raspored" aria-current="page">Raspored</a>
+        <a href="#oprema" data-page-link="oprema">Oprema</a>
+      </nav>
+      <button class="logout-button" id="logout-button" type="button">Odjavi se</button>
     </div>
   </header>
 
-  <main>
-    <section class="intro" aria-labelledby="page-title">
-      <div>
-        <p class="eyebrow">Rezervacije učionice</p>
-        <h1 id="page-title">Kada je Mejkers Lab slobodan?</h1>
-        <p class="intro-copy">Izaberi do tri slobodna termina i ostavi podatke za rezervaciju. Vikendi nisu prikazani.</p>
-      </div>
-      <div class="date-card" aria-label="Period rezervacija">
-        <span>Rezervacije su otvorene</span>
-        <strong>14 dana unapred</strong>
-      </div>
-    </section>
+  <section class="teacher-login" id="login-view" aria-labelledby="login-title">
+    <form class="teacher-login-card" id="login-form">
+      <h1 id="login-title">Prijava nastavnika</h1>
+      <label class="field">
+        <span>Korisničko ime</span>
+        <input name="username" type="text" autocomplete="username" required autofocus placeholder="Korisničko ime">
+      </label>
+      <label class="field">
+        <span>Lozinka</span>
+        <span class="password-control">
+          <input id="teacher-password" name="password" type="password" autocomplete="current-password" required placeholder="Lozinka">
+          <button class="password-toggle" id="password-toggle" type="button" aria-label="Prikaži lozinku" aria-pressed="false">
+            <svg class="eye-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.75"/></svg>
+            <svg class="eye-closed" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 6.2A10.8 10.8 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-3 3.6M6.2 6.3C3.8 8 2.5 12 2.5 12s3.5 6 9.5 6c1.2 0 2.3-.2 3.3-.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+          </button>
+        </span>
+      </label>
+      <p class="form-error" id="login-error" role="alert"></p>
+      <button class="primary-button full-width" type="submit">Prijavi se</button>
+    </form>
+  </section>
 
-    <section class="schedule-shell" id="raspored" aria-labelledby="schedule-title">
+  <main id="app-content" hidden>
+    <section class="app-view" id="view-raspored" data-page="raspored">
+      <section class="intro" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Rezervacije učionice</p>
+          <h1 id="page-title">Kada je Mejkers Lab slobodan?</h1>
+          <p class="intro-copy">Izaberi do tri slobodna termina i ostavi podatke za rezervaciju. Vikendi nisu prikazani.</p>
+        </div>
+        <div class="date-card" aria-label="Period rezervacija">
+          <span>Otvoren period</span>
+          <strong id="booking-window">Danas + 14 dana</strong>
+        </div>
+      </section>
+
+      <section class="schedule-shell" id="raspored" aria-labelledby="schedule-title">
       <div class="schedule-toolbar">
         <div>
           <p class="section-kicker">Dostupnost učionice</p>
@@ -55,6 +81,7 @@
       <div class="legend" aria-label="Legenda statusa termina">
         <span><i class="legend-swatch available"></i>Slobodno</span>
         <span><i class="legend-swatch selected"></i>Izabrano</span>
+        <span><i class="legend-swatch reserved"></i>Trajni termini</span>
         <span><i class="legend-swatch booked"></i>Zauzeto</span>
       </div>
 
@@ -71,6 +98,42 @@
         </div>
         <button class="primary-button" id="open-booking" type="button">Nastavi na rezervaciju</button>
       </div>
+      </section>
+    </section>
+
+    <section class="app-view" id="view-oprema" data-page="oprema" hidden>
+      <section class="equipment-intro" aria-labelledby="equipment-page-title">
+        <div>
+          <p class="eyebrow">Inventar laboratorije</p>
+          <h1 id="equipment-page-title">Oprema i nameštaj Mejkers Laba</h1>
+          <p class="intro-copy">Pregled alata, pribora, digitalne opreme i IKEA nameštaja sa trenutno dostupnim količinama.</p>
+        </div>
+        <div class="equipment-total"><strong id="equipment-total">146</strong><span>komada ukupno</span></div>
+      </section>
+
+      <section class="equipment-shell" id="oprema" aria-labelledby="equipment-title">
+      <div class="equipment-heading">
+        <div>
+          <p class="section-kicker">Evidencija inventara</p>
+          <h2 id="equipment-title">Šta imamo u laboratoriji</h2>
+          <p>Izaberi kategoriju za jasan pregled stavki.</p>
+        </div>
+      </div>
+
+      <div class="equipment-tabs" role="tablist" aria-label="Kategorije opreme">
+        <button class="equipment-tab is-active" id="tools-tab" type="button" role="tab" aria-selected="true" aria-controls="equipment-table" data-equipment-tab="tools">Mašine i alati</button>
+        <button class="equipment-tab" id="accessories-tab" type="button" role="tab" aria-selected="false" aria-controls="equipment-table" data-equipment-tab="accessories">Pribor i setovi</button>
+        <button class="equipment-tab" id="digital-tab" type="button" role="tab" aria-selected="false" aria-controls="equipment-table" data-equipment-tab="digital">Digitalna oprema</button>
+        <button class="equipment-tab" id="furniture-tab" type="button" role="tab" aria-selected="false" aria-controls="equipment-table" data-equipment-tab="furniture">IKEA nameštaj</button>
+      </div>
+
+      <div class="equipment-table-wrap">
+        <table class="equipment-table" id="equipment-table" aria-live="polite">
+          <thead><tr><th scope="col">Slika</th><th scope="col">Naziv artikla</th><th scope="col">Količina</th></tr></thead>
+          <tbody id="equipment-list"></tbody>
+        </table>
+      </div>
+      </section>
     </section>
 
   </main>

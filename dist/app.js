@@ -7,9 +7,53 @@
   const DAY_SHORT = ["Pon", "Uto", "Sre", "Čet", "Pet"];
   const MONTHS = ["januar", "februar", "mart", "april", "maj", "jun", "jul", "avgust", "septembar", "oktobar", "novembar", "decembar"];
   const MONTHS_GENITIVE = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
+  const TEACHER_AUTH_URL = "/api/teacher/session";
+  const EQUIPMENT = [
+    { category: "tools", name: "Kombinovana testera GTM 12 JL Professional", quantity: 1, image: "./assets/equipment/gtm-12-jl.png" },
+    { category: "tools", name: "Akumulatorski set GDX 18V-200 + GSR 18V-50", quantity: 1, image: "./assets/equipment/gdx-gsr-set.png" },
+    { category: "tools", name: "Ubodna testera GST 160 BCE Professional", quantity: 1, image: "./assets/equipment/gst-160-bce.png" },
+    { category: "tools", name: "Stubna bušilica PBD 40", quantity: 1, image: "./assets/equipment/pbd-40.png" },
+    { category: "tools", name: "Laserski daljinomer GLM 50-27 CG Professional", quantity: 1, image: "./assets/equipment/glm-50-27-cg.png" },
+    { category: "tools", name: "Pištolj za lepljenje GKP 200 CE Professional", quantity: 3, image: "./assets/equipment/gkp-200-ce.png" },
+    { category: "tools", name: "Fen za vreli vazduh GHG 20-63 Professional", quantity: 1, image: "./assets/equipment/ghg-20-63.png" },
+    { category: "tools", name: "Ugaona brusilica GWS 12-125 S Professional", quantity: 1, image: "./assets/equipment/gws-12-125-s.png" },
+    { category: "accessories", name: "GDE 125 EA-T Professional – poklopac za usisavanje prašine za ugaonu brusilicu", quantity: 1, image: "./assets/equipment/gde-125-ea-t.png" },
+    { category: "accessories", name: "103-delni X-Line Titanium set", quantity: 1, image: "./assets/equipment/x-line-103.jpg" },
+    { category: "accessories", name: "35-delni Extra Hard set nastavaka za odvrtače", quantity: 1, image: "./assets/equipment/extra-hard-35.png" },
+    { category: "accessories", name: "37-delni set odvrtača sa drškom", quantity: 1, image: "./assets/equipment/screwdriver-37.png" },
+    { category: "accessories", name: "FSN SA Professional – adapter za ubodnu testeru i vođicu", quantity: 1, image: "./assets/equipment/fsn-sa.png" },
+    { category: "accessories", name: "EXPERT Self Cut Speed set pljosnatih burgija", quantity: 2, image: "./assets/equipment/self-cut-speed.png" },
+    { category: "digital", name: "VR Oculus Meta Quest 3S – 256 GB", quantity: 1, image: "./assets/equipment/meta-quest-3s.png" },
+    { category: "digital", name: "3D štampač", quantity: 1, image: "./assets/equipment/3d-printer.png" },
+    { category: "digital", name: "Arduino set", quantity: 8, image: "./assets/equipment/arduino-starter-kit.jpg" },
+    { category: "digital", name: "MIDI kontroler – Novation Launchpad Mini MK3 (8×8)", quantity: 1, image: "./assets/equipment/novation-launchpad-mini-mk3.png" },
+    { category: "digital", name: "Kamera za računarski vid", quantity: 1, image: "./assets/equipment/computer-vision-camera.png" },
+    { category: "digital", name: "Računar", quantity: 1, image: "./assets/equipment/computer.webp" },
+    { category: "digital", name: "TV", quantity: 1, image: "./assets/equipment/tv.png" },
+    { category: "furniture", name: "SKÅDIS polica, bela", quantity: 6, image: "./assets/furniture/skadis-shelf.jpg" },
+    { category: "furniture", name: "SKÅDIS kuka, bela", quantity: 6, image: "./assets/furniture/skadis-hook.jpg" },
+    { category: "furniture", name: "SKÅDIS posuda s poklopcem, bela", quantity: 6, image: "./assets/furniture/skadis-container.jpg" },
+    { category: "furniture", name: "SKÅDIS perforirana ploča, bela, 56 × 56 cm", quantity: 6, image: "./assets/furniture/skadis-board-white.jpg" },
+    { category: "furniture", name: "ADILS nogar, bela", quantity: 40, image: "./assets/furniture/adils-leg.jpg" },
+    { category: "furniture", name: "LINNMON ploča stola, bela, 100 × 60 cm", quantity: 10, image: "./assets/furniture/linnmon-top.jpg" },
+    { category: "furniture", name: "TROTTEN podokvir ploče stola, bela, 120 × 70 × 75 cm", quantity: 7, image: "./assets/furniture/trotten-frame.jpg" },
+    { category: "furniture", name: "TROTTEN ploča stola, bela, 120 × 70 cm", quantity: 7, image: "./assets/furniture/trotten-top.jpg" },
+    { category: "furniture", name: "FRÖSVI sklopiva stolica, bukovina", quantity: 15, image: "./assets/furniture/frosvi-chair.jpg" },
+    { category: "furniture", name: "SKÅDIS perforirana ploča, crna, 56 × 56 cm", quantity: 2, image: "./assets/furniture/skadis-board-black.jpg" },
+    { category: "furniture", name: "SKÅDIS set dodataka, 7 komada, crna", quantity: 2, image: "./assets/furniture/skadis-accessories-black.jpg" },
+    { category: "furniture", name: "KALLAX spojene police, crnosmeđa, 77 × 147 cm", quantity: 2, image: "./assets/furniture/kallax.jpg" },
+    { category: "furniture", name: "MICKE radni sto, bela, 105 × 50 cm", quantity: 1, image: "./assets/furniture/micke-desk.jpg" },
+    { category: "furniture", name: "LÄKTARE konferencijska stolica, brezov furnir/crna", quantity: 1, image: "./assets/furniture/laktare-chair.jpg" },
+    { category: "furniture", name: "BJÖRKÅSEN postolje za laptop, boja antracita", quantity: 1, image: "./assets/furniture/bjorkasen.jpg" },
+    { category: "furniture", name: "TJUSIG vešalica za vrata/zid, bela, 60 cm", quantity: 3, image: "./assets/furniture/tjusig.jpg" }
+  ];
 
+  const loginView = document.querySelector("#login-view");
+  const loginForm = document.querySelector("#login-form");
+  const loginError = document.querySelector("#login-error");
+  const appContent = document.querySelector("#app-content");
+  const headerActions = document.querySelector("#header-actions");
   const scheduleShell = document.querySelector(".schedule-shell");
-  const connectionStatus = document.querySelector("#connection-status");
   const grid = document.querySelector("#schedule-grid");
   const mobileDays = document.querySelector("#mobile-days");
   const weekLabel = document.querySelector("#week-label");
@@ -26,12 +70,20 @@
   const formError = document.querySelector("#form-error");
   const toast = document.querySelector("#toast");
   const toastCopy = document.querySelector("#toast-copy");
+  const equipmentList = document.querySelector("#equipment-list");
+  const passwordInput = document.querySelector("#teacher-password");
+  const passwordToggle = document.querySelector("#password-toggle");
+  const pageLinks = [...document.querySelectorAll("[data-page-link]")];
+  const pageViews = [...document.querySelectorAll("[data-page]")];
 
   let selected = [];
   let currentWeek = 0;
   let mobileDay = 0;
   let bookings = [];
-  let openingMonday = getOpeningMonday();
+  let openingMonday = currentMonday();
+  let today = startOfDay(new Date());
+  let closingDate = addDays(today, 14);
+  let activeEquipmentTab = "tools";
 
   function startOfDay(date) {
     const result = new Date(date);
@@ -39,13 +91,10 @@
     return result;
   }
 
-  function getOpeningMonday() {
-    const today = startOfDay(new Date());
-    const day = today.getDay();
-    const daysToMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + daysToMonday);
-    return monday;
+  function currentMonday() {
+    const current = startOfDay(new Date());
+    current.setDate(current.getDate() - ((current.getDay() + 6) % 7));
+    return current;
   }
 
   function parseIsoDate(value) {
@@ -73,37 +122,109 @@
     return `${start.getDate()}. ${MONTHS[start.getMonth()]} – ${end.getDate()}. ${MONTHS[end.getMonth()]} ${end.getFullYear()}.`;
   }
 
+  function formatWindow() {
+    if (today.getMonth() === closingDate.getMonth()) return `${today.getDate()}–${closingDate.getDate()}. ${MONTHS[today.getMonth()]}`;
+    return `${today.getDate()}. ${MONTHS[today.getMonth()]} – ${closingDate.getDate()}. ${MONTHS[closingDate.getMonth()]}`;
+  }
+
   function formatSlot(date, hour, long = false) {
     const dayIndex = (date.getDay() + 6) % 7;
     const day = long ? DAYS[dayIndex] : DAY_SHORT[dayIndex];
     return `${day}, ${date.getDate()}. ${MONTHS_GENITIVE[date.getMonth()]} · ${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00`;
   }
 
-  function setConnection(state, text) {
-    connectionStatus.classList.toggle("is-online", state === "online");
-    connectionStatus.classList.toggle("is-error", state === "error");
-    connectionStatus.querySelector("span:last-child").textContent = text;
+  async function api(url, options = {}) {
+    const response = await fetch(url, {
+      ...options,
+      headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}), ...options.headers },
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw Object.assign(new Error(data.error || "Zahtev nije uspeo."), { status: response.status });
+    return data;
+  }
+
+  function showLogin() {
+    loginView.hidden = false;
+    appContent.hidden = true;
+    headerActions.hidden = true;
+    document.body.classList.remove("is-authenticated");
+  }
+
+  function showApp() {
+    loginView.hidden = true;
+    appContent.hidden = false;
+    headerActions.hidden = false;
+    document.body.classList.add("is-authenticated");
+    showPage(pageFromHash(), { updateHash: false });
+  }
+
+  function pageFromHash() {
+    return window.location.hash === "#oprema" ? "oprema" : "raspored";
+  }
+
+  function showPage(page, { updateHash = true } = {}) {
+    const target = page === "oprema" ? "oprema" : "raspored";
+    pageViews.forEach((view) => { view.hidden = view.dataset.page !== target; });
+    pageLinks.forEach((link) => {
+      const active = link.dataset.pageLink === target;
+      link.classList.toggle("is-active", active);
+      if (active) link.setAttribute("aria-current", "page");
+      else link.removeAttribute("aria-current");
+    });
+    if (updateHash && window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
+    document.title = target === "oprema" ? "Oprema | Mejkers Lab" : "Raspored | Mejkers Lab";
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  async function checkSession() {
+    try {
+      await api(TEACHER_AUTH_URL);
+      showApp();
+      await loadBookings();
+    } catch {
+      showLogin();
+    }
   }
 
   async function loadBookings({ silent = false } = {}) {
     if (!silent) scheduleShell.classList.add("is-loading");
     try {
-      const response = await fetch("/api/bookings", { headers: { Accept: "application/json" }, cache: "no-store" });
-      if (!response.ok) throw new Error("Raspored trenutno nije dostupan.");
-      const data = await response.json();
+      const data = await api("/api/bookings");
       bookings = Array.isArray(data.bookings) ? data.bookings : [];
       if (data.openingMonday) openingMonday = parseIsoDate(data.openingMonday);
+      if (data.today) today = parseIsoDate(data.today);
+      if (data.closingDate) closingDate = parseIsoDate(data.closingDate);
+      mobileDay = defaultMobileDay();
+      currentWeek = Math.max(minWeekOffset(), Math.min(currentWeek, maxWeekOffset()));
       selected = selected.filter((id) => !getBooking(id));
-      setConnection("online", "Raspored je sinhronizovan");
+      document.querySelector("#booking-window").textContent = formatWindow();
       render();
       return data;
     } catch (error) {
-      setConnection("error", "Server trenutno nije dostupan");
+      if (error.status === 401) {
+        showLogin();
+        return null;
+      }
       if (!silent) showToast(error.message || "Raspored trenutno nije dostupan.", false);
       throw error;
     } finally {
       scheduleShell.classList.remove("is-loading");
     }
+  }
+
+  function defaultMobileDay() {
+    const day = today.getDay();
+    return day >= 1 && day <= 5 ? day - 1 : 0;
+  }
+
+  function maxWeekOffset() {
+    return Math.max(0, Math.floor((startOfDay(closingDate) - startOfDay(openingMonday)) / 604800000));
+  }
+
+  function minWeekOffset() {
+    const day = today.getDay();
+    return day === 0 || day === 6 ? Math.min(1, maxWeekOffset()) : 0;
   }
 
   function getBooking(id) {
@@ -116,27 +237,37 @@
     return end <= new Date();
   }
 
+  function isOutsideWindow(date) {
+    const value = startOfDay(date);
+    return value < startOfDay(today) || value > startOfDay(closingDate);
+  }
+
+  function isMicrocontrollerSlot(date, hour) {
+    return (date.getDay() === 2 || date.getDay() === 4) && (hour === 12 || hour === 13);
+  }
+
   function render() {
     renderMobileDays();
     renderGrid();
     renderSelection();
     const weekStart = addDays(openingMonday, currentWeek * 7);
     weekLabel.textContent = formatWeekRange(weekStart);
-    prevWeek.disabled = currentWeek === 0;
-    nextWeek.disabled = currentWeek === 1;
+    prevWeek.disabled = currentWeek <= minWeekOffset();
+    nextWeek.disabled = currentWeek >= maxWeekOffset();
   }
 
   function renderMobileDays() {
     const weekStart = addDays(openingMonday, currentWeek * 7);
     mobileDays.innerHTML = DAYS.map((day, index) => {
       const date = addDays(weekStart, index);
-      return `<button class="mobile-day" type="button" role="tab" aria-selected="${index === mobileDay}" data-day="${index}" aria-label="${day}, ${date.getDate()}. ${MONTHS[date.getMonth()]}"><span>${DAY_SHORT[index]}</span><strong>${date.getDate()}.</strong></button>`;
+      const isToday = isoDate(date) === isoDate(today);
+      const outside = startOfDay(date) > startOfDay(closingDate);
+      return `<button class="mobile-day${isToday ? " is-today" : ""}" type="button" role="tab" aria-selected="${index === mobileDay}" data-day="${index}" aria-label="${day}, ${date.getDate()}. ${MONTHS[date.getMonth()]}"${outside ? " disabled" : ""}><span>${DAY_SHORT[index]}</span><strong>${date.getDate()}.</strong>${isToday ? '<em>Danas</em>' : ""}</button>`;
     }).join("");
   }
 
   function renderGrid() {
     const weekStart = addDays(openingMonday, currentWeek * 7);
-    const todayId = isoDate(new Date());
     const isMobile = window.matchMedia("(max-width: 700px)").matches;
     let html = "";
 
@@ -144,8 +275,9 @@
       html += '<div class="grid-corner" aria-hidden="true"></div>';
       DAYS.forEach((day, index) => {
         const date = addDays(weekStart, index);
-        const todayClass = isoDate(date) === todayId ? " today" : "";
-        html += `<div class="day-heading${todayClass}"><span class="day-name">${day}</span><span class="day-date">${date.getDate()}. ${MONTHS[date.getMonth()]}</span></div>`;
+        const todayClass = isoDate(date) === isoDate(today) ? " today" : "";
+        const closedClass = startOfDay(date) > startOfDay(closingDate) ? " outside-window" : "";
+        html += `<div class="day-heading${todayClass}${closedClass}"><span class="day-name">${day}</span><span class="day-date">${date.getDate()}. ${MONTHS[date.getMonth()]}</span>${todayClass ? '<span class="today-label">Danas</span>' : ""}</div>`;
       });
     }
 
@@ -158,21 +290,33 @@
         const booking = getBooking(id);
         const picked = selected.includes(id);
         const past = isPast(date, hour);
+        const outside = isOutsideWindow(date);
+        const reserved = isMicrocontrollerSlot(date, hour);
         let className = "slot";
         let label = "Slobodno";
         let disabled = "";
+        let action = "Izaberi termin";
+
         if (booking) {
           className += " booked";
           label = `<span>${escapeHtml(booking.teacher)}</span>`;
+          action = `Prikaži rezervaciju: ${booking.teacher}`;
+        } else if (outside || past) {
+          className += outside && startOfDay(date) > startOfDay(closingDate) ? " closed" : " past";
+          label = outside && startOfDay(date) > startOfDay(closingDate) ? "Van perioda" : "Prošlo";
+          action = label;
+          disabled = " disabled";
+        } else if (reserved) {
+          className += " reserved";
+          label = "Sekcija mikrokontrolera";
+          action = "Trajni termin svake nedelje za sekciju mikrokontrolera";
+          disabled = " disabled";
         } else if (picked) {
           className += " selected";
           label = "Izabrano";
-        } else if (past) {
-          className += " past";
-          label = "Prošlo";
-          disabled = " disabled";
+          action = "Ukloni iz izbora";
         }
-        const action = booking ? `Prikaži rezervaciju: ${booking.teacher}` : picked ? "Ukloni iz izbora" : "Izaberi termin";
+
         html += `<button class="${className}" type="button" data-slot="${id}" data-time="${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00" aria-label="${escapeHtml(formatSlot(date, hour, true))} — ${escapeHtml(action)}"${disabled}>${label}</button>`;
       });
     });
@@ -185,6 +329,18 @@
     selectionSummary.textContent = selected.map(labelForSlot).join(" · ");
   }
 
+  function renderEquipment() {
+    const items = EQUIPMENT.filter((item) => item.category === activeEquipmentTab);
+    equipmentList.innerHTML = items.map((item) => `
+      <tr>
+        <td data-label="Slika"><img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy" width="150" height="96"></td>
+        <td data-label="Naziv artikla"><strong>${escapeHtml(item.name)}</strong></td>
+        <td data-label="Količina"><span class="quantity-badge">${item.quantity} ${item.quantity === 1 ? "komad" : "komada"}</span></td>
+      </tr>
+    `).join("");
+    document.querySelector("#equipment-total").textContent = String(EQUIPMENT.reduce((sum, item) => sum + item.quantity, 0));
+  }
+
   function labelForSlot(id) {
     const [year, month, day, hour] = id.split("-").map(Number);
     return formatSlot(new Date(year, month - 1, day), hour);
@@ -193,10 +349,7 @@
   function handleSlotClick(button) {
     const id = button.dataset.slot;
     const booking = getBooking(id);
-    if (booking) {
-      openDetails(booking, id);
-      return;
-    }
+    if (booking) return openDetails(booking, id);
     if (selected.includes(id)) selected = selected.filter((slot) => slot !== id);
     else if (selected.length < MAX_SELECTION) selected = [...selected, id].sort();
     else showToast("Možeš da izabereš najviše tri termina.", false);
@@ -246,11 +399,15 @@
       bookingForm.reset();
       selected = [];
       render();
-      setConnection("online", "Raspored je sinhronizovan");
       showToast(`${booking.slots.length === 1 ? "1 termin" : `${booking.slots.length} termina`} · ${booking.teacher}`, true);
     } catch (error) {
-      formError.textContent = error.message;
-      if (error.status === 409) await loadBookings({ silent: true }).catch(() => {});
+      if (error.status === 401) {
+        bookingDialog.close();
+        showLogin();
+      } else {
+        formError.textContent = error.message;
+        if (error.status === 409) await loadBookings({ silent: true }).catch(() => {});
+      }
     } finally {
       submitButton.disabled = false;
       submitButton.textContent = "Potvrdi rezervaciju";
@@ -271,7 +428,7 @@
   let toastTimer;
   function showToast(message, success) {
     clearTimeout(toastTimer);
-    toast.querySelector("strong").textContent = success ? "Termin je rezervisan" : "Potrebna je pažnja";
+    toast.querySelector("strong").textContent = success ? "Termin je rezervisan" : "Pažljivo";
     toastCopy.textContent = message;
     toast.hidden = false;
     toastTimer = setTimeout(() => { toast.hidden = true; }, 4200);
@@ -281,89 +438,82 @@
     return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char]));
   }
 
+  loginForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    loginError.textContent = "";
+    const button = loginForm.querySelector('[type="submit"]');
+    const form = new FormData(loginForm);
+    button.disabled = true;
+    button.textContent = "Prijavljivanje…";
+    try {
+      await api(TEACHER_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) });
+      loginForm.reset();
+      passwordInput.type = "password";
+      passwordToggle.setAttribute("aria-pressed", "false");
+      passwordToggle.setAttribute("aria-label", "Prikaži lozinku");
+      showApp();
+      await loadBookings();
+    } catch (error) {
+      loginError.textContent = error.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "Prijavi se";
+    }
+  });
+
+  passwordToggle.addEventListener("click", () => {
+    const visible = passwordInput.type === "text";
+    passwordInput.type = visible ? "password" : "text";
+    passwordToggle.setAttribute("aria-pressed", String(!visible));
+    passwordToggle.setAttribute("aria-label", visible ? "Prikaži lozinku" : "Sakrij lozinku");
+    passwordInput.focus();
+  });
+
+  pageLinks.forEach((link) => link.addEventListener("click", (event) => {
+    event.preventDefault();
+    showPage(link.dataset.pageLink);
+  }));
+  window.addEventListener("hashchange", () => { if (!appContent.hidden) showPage(pageFromHash(), { updateHash: false }); });
+
+  document.querySelector("#logout-button").addEventListener("click", async () => {
+    await api(TEACHER_AUTH_URL, { method: "DELETE" }).catch(() => {});
+    bookings = [];
+    selected = [];
+    showLogin();
+    loginForm.elements.username.focus();
+  });
   grid.addEventListener("click", (event) => {
     const button = event.target.closest("[data-slot]");
     if (button && !button.disabled) handleSlotClick(button);
   });
-
   mobileDays.addEventListener("click", (event) => {
     const button = event.target.closest("[data-day]");
-    if (!button) return;
+    if (!button || button.disabled) return;
     mobileDay = Number(button.dataset.day);
     renderMobileDays();
     renderGrid();
   });
-
-  prevWeek.addEventListener("click", () => { if (currentWeek > 0) { currentWeek -= 1; mobileDay = 0; render(); } });
-  nextWeek.addEventListener("click", () => { if (currentWeek < 1) { currentWeek += 1; mobileDay = 0; render(); } });
+  document.querySelector(".equipment-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("[data-equipment-tab]");
+    if (!button) return;
+    activeEquipmentTab = button.dataset.equipmentTab;
+    document.querySelectorAll("[data-equipment-tab]").forEach((tab) => {
+      const active = tab === button;
+      tab.classList.toggle("is-active", active);
+      tab.setAttribute("aria-selected", String(active));
+    });
+    renderEquipment();
+  });
+  prevWeek.addEventListener("click", () => { if (currentWeek > minWeekOffset()) { currentWeek -= 1; mobileDay = currentWeek === minWeekOffset() ? defaultMobileDay() : 0; render(); } });
+  nextWeek.addEventListener("click", () => { if (currentWeek < maxWeekOffset()) { currentWeek += 1; mobileDay = 0; render(); } });
+  weekLabel.addEventListener("click", () => { currentWeek = minWeekOffset(); mobileDay = defaultMobileDay(); render(); });
   document.querySelector("#open-booking").addEventListener("click", openBookingDialog);
   document.querySelector("#close-booking").addEventListener("click", () => bookingDialog.close());
   document.querySelector("#close-details").addEventListener("click", () => detailsDialog.close());
   bookingForm.addEventListener("submit", submitBooking);
+  [bookingDialog, detailsDialog].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
+  window.addEventListener("resize", () => { if (!appContent.hidden) render(); });
 
-  [bookingDialog, detailsDialog].forEach((dialog) => {
-    dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
-  });
-
-  let resizeTimer;
-  window.addEventListener("resize", () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(renderGrid, 100);
-  });
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") loadBookings({ silent: true }).catch(() => {});
-  });
-  setInterval(() => loadBookings({ silent: true }).catch(() => {}), 15000);
-
-  if (document.modelContext?.registerTool) {
-    const availabilityTool = {
-      name: "read_mejkers_lab_availability",
-      title: "Pročitaj dostupnost Mejkers Laba",
-      description: "Vraća slobodne i zauzete termine u trenutno prikazanoj nedelji.",
-      inputSchema: { type: "object", properties: {}, additionalProperties: false },
-      annotations: { readOnlyHint: true, untrustedContentHint: true },
-      async execute() {
-        await loadBookings({ silent: true });
-        const weekStart = addDays(openingMonday, currentWeek * 7);
-        const slots = [];
-        DAYS.forEach((_, dayIndex) => {
-          const date = addDays(weekStart, dayIndex);
-          HOURS.forEach((hour) => {
-            const id = slotId(date, hour);
-            slots.push({ id, status: getBooking(id) ? "zauzeto" : isPast(date, hour) ? "prošlo" : "slobodno" });
-          });
-        });
-        return { week: formatWeekRange(weekStart), slots };
-      }
-    };
-    const bookingTool = {
-      name: "create_mejkers_lab_booking",
-      title: "Rezerviši Mejkers Lab",
-      description: "Rezerviše od jednog do najviše tri slobodna termina za nastavnika.",
-      inputSchema: {
-        type: "object",
-        properties: {
-          teacher: { type: "string", minLength: 3, maxLength: 80 },
-          purpose: { type: "string", minLength: 3, maxLength: 240 },
-          students: { type: "integer", minimum: 1, maximum: 40 },
-          slots: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}-\\d{2}$" } }
-        },
-        required: ["teacher", "purpose", "students", "slots"],
-        additionalProperties: false
-      },
-      annotations: { readOnlyHint: false, untrustedContentHint: false },
-      async execute(input) {
-        const booking = await requestBooking(input);
-        await loadBookings({ silent: true });
-        return { id: booking.id, status: "potvrđeno", slots: booking.slots };
-      }
-    };
-    Promise.all([
-      Promise.resolve(document.modelContext.registerTool(availabilityTool)),
-      Promise.resolve(document.modelContext.registerTool(bookingTool))
-    ]).catch(() => {});
-  }
-
-  render();
-  loadBookings().catch(() => {});
+  renderEquipment();
+  checkSession();
 })();

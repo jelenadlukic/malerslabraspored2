@@ -1,6 +1,12 @@
 # Mejkers Lab raspored
 
-Responsive aplikacija za rezervaciju termina u Mejkers Lab učionici. Javni raspored se nalazi na početnoj strani, a administracija rezervacija na ruti `/adminpanel`.
+Responsive aplikacija za rezervaciju termina u Mejkers Lab učionici. Raspored i inventar opreme dostupni su nastavniku posle prijave, a administracija rezervacija na ruti `/adminpanel`.
+
+## Pristup nastavnika
+
+Početna strana zahteva prijavu nastavnika pre učitavanja sadržaja. Prijava važi osam sati. Raspored i oprema su odvojeni prikazi u glavnoj navigaciji. Raspored dozvoljava rezervacije od današnjeg dana do 14 dana unapred, a vikendom se odmah otvara naredna radna nedelja. Termini Sekcije mikrokontrolera utorkom i četvrtkom od 12.00 do 14.00 trajno su blokirani za druge rezervacije.
+
+Inventar je podeljen na mašine i alate, pribor i setove i digitalnu opremu. Svaka evidentirana stavka ima sliku i količinu.
 
 ## Netlify podešavanje
 
@@ -34,4 +40,5 @@ Oba korisnika koriste lozinku iz promenljive `ADMIN_PASSWORD`. Prijava važi osa
 ```bash
 npm install
 npm run build
+npx netlify-cli dev
 ```

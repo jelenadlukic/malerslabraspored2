@@ -1,11 +1,17 @@
 import { getStore } from "@netlify/blobs";
 import { randomUUID } from "node:crypto";
+import { requestOriginIsValid } from "./_shared/admin-session.mjs";
+import { getTeacherSession } from "./_shared/teacher-session.mjs";
+import {
+  allowedSlotIds,
+  formatDateOnly,
+  getClosingDate,
+  getOpeningMonday,
+  todayInBelgrade
+} from "./_shared/schedule.mjs";
 
 const STORE_NAME = "mejkers-lab-raspored";
 const BOOKINGS_KEY = "bookings-v1";
-const TIME_ZONE = "Europe/Belgrade";
-const HOURS = Array.from({ length: 11 }, (_, index) => index + 7);
-const MAX_WRITE_ATTEMPTS = 5;
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -16,53 +22,6 @@ function jsonResponse(payload, status = 200) {
       "X-Content-Type-Options": "nosniff"
     }
   });
-}
-
-function todayInBelgrade() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(new Date());
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
-}
-
-function parseDateOnly(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return Number.isNaN(date.valueOf()) ? null : date;
-}
-
-function formatDateOnly(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function addDays(date, count) {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + count);
-  return next;
-}
-
-function getOpeningMonday() {
-  const today = parseDateOnly(todayInBelgrade());
-  const day = today.getUTCDay();
-  const daysToMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
-  return addDays(today, daysToMonday);
-}
-
-function allowedSlotIds() {
-  const firstMonday = getOpeningMonday();
-  const allowed = new Set();
-  [0, 1].forEach((week) => {
-    [0, 1, 2, 3, 4].forEach((day) => {
-      const date = formatDateOnly(addDays(firstMonday, week * 7 + day));
-      HOURS.forEach((hour) => allowed.add(`${date}-${String(hour).padStart(2, "0")}`));
-    });
-  });
-  return allowed;
 }
 
 function validateBooking(body) {
@@ -94,40 +53,51 @@ async function createBooking(body) {
   const data = validateBooking(body);
   const store = getBookingsStore();
 
-  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt += 1) {
-    const { bookings, etag } = await readEntry(store);
-    const occupied = new Set(bookings.flatMap((booking) => Array.isArray(booking.slots) ? booking.slots : []));
-    if (data.slots.some((slot) => occupied.has(slot))) {
-      throw Object.assign(new Error("Jedan od termina je upravo rezervisan. Osveži raspored i izaberi drugi."), { status: 409 });
-    }
-
-    const booking = {
-      id: randomUUID(),
-      ...data,
-      createdAt: new Date().toISOString()
-    };
-    const options = etag ? { onlyIfMatch: etag } : { onlyIfNew: true };
-    const result = await store.setJSON(BOOKINGS_KEY, [...bookings, booking], options);
-    if (result.modified) return booking;
+  const { bookings, etag } = await readEntry(store);
+  const occupied = new Set(bookings.flatMap((booking) => Array.isArray(booking.slots) ? booking.slots : []));
+  if (data.slots.some((slot) => occupied.has(slot))) {
+    throw Object.assign(new Error("Jedan od termina je upravo rezervisan. Osveži raspored i izaberi drugi."), { status: 409 });
   }
 
-  throw Object.assign(new Error("Raspored je upravo promenjen. Pokušaj ponovo."), { status: 409 });
+  const booking = {
+    id: randomUUID(),
+    ...data,
+    createdAt: new Date().toISOString()
+  };
+  const options = etag ? { onlyIfMatch: etag } : { onlyIfNew: true };
+  const result = await store.setJSON(BOOKINGS_KEY, [...bookings, booking], options);
+  if (!result.modified) {
+    // Netlify's local Blobs emulator can reject conditional writes even after a
+    // strong read. Re-read before the compatibility fallback so stale slots
+    // are never knowingly overwritten.
+    const { bookings: latestBookings } = await readEntry(store);
+    const latestOccupied = new Set(latestBookings.flatMap((item) => Array.isArray(item.slots) ? item.slots : []));
+    if (data.slots.some((slot) => latestOccupied.has(slot))) {
+      throw Object.assign(new Error("Jedan od termina je upravo rezervisan. Osveži raspored i izaberi drugi."), { status: 409 });
+    }
+    await store.setJSON(BOOKINGS_KEY, [...latestBookings, booking]);
+  }
+  return booking;
 }
 
 export default async (request) => {
   try {
+    if (!getTeacherSession(request)) return jsonResponse({ error: "Potrebna je prijava nastavnika." }, 401);
+
     if (request.method === "GET") {
       const { bookings } = await readEntry(getBookingsStore());
       return jsonResponse({
         bookings,
         openingMonday: formatDateOnly(getOpeningMonday()),
-        weeks: 2,
+        today: todayInBelgrade(),
+        closingDate: formatDateOnly(getClosingDate()),
         hours: { from: 7, to: 18 },
         updatedAt: new Date().toISOString()
       });
     }
 
     if (request.method === "POST") {
+      if (!requestOriginIsValid(request)) return jsonResponse({ error: "Zahtev nije dozvoljen." }, 403);
       const contentType = request.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) return jsonResponse({ error: "Očekivan je JSON zahtev." }, 415);
       const bodyText = await request.text();

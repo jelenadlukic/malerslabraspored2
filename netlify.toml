@@ -19,6 +19,12 @@
   force = true
 
 [[redirects]]
+  from = "/api/teacher/session"
+  to = "/.netlify/functions/teacher-auth"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/admin/session"
   to = "/.netlify/functions/admin-auth"
   status = 200

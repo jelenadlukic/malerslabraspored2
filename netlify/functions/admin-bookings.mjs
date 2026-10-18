@@ -1,11 +1,9 @@
 import { getStore } from "@netlify/blobs";
 import { getAdminSession, requestOriginIsValid } from "./_shared/admin-session.mjs";
+import { allowedSlotIds, formatDateOnly, getClosingDate, getOpeningMonday, todayInBelgrade } from "./_shared/schedule.mjs";
 
 const STORE_NAME = "mejkers-lab-raspored";
 const BOOKINGS_KEY = "bookings-v1";
-const TIME_ZONE = "Europe/Belgrade";
-const HOURS = Array.from({ length: 11 }, (_, index) => index + 7);
-const MAX_WRITE_ATTEMPTS = 5;
 
 function jsonResponse(payload, status = 200) {
   return new Response(JSON.stringify(payload), {
@@ -16,53 +14,6 @@ function jsonResponse(payload, status = 200) {
       "X-Content-Type-Options": "nosniff"
     }
   });
-}
-
-function todayInBelgrade() {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TIME_ZONE,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).formatToParts(new Date());
-  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-  return `${value.year}-${value.month}-${value.day}`;
-}
-
-function parseDateOnly(value) {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
-  if (!match) return null;
-  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
-  return Number.isNaN(date.valueOf()) ? null : date;
-}
-
-function formatDateOnly(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function addDays(date, count) {
-  const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + count);
-  return next;
-}
-
-function getOpeningMonday() {
-  const today = parseDateOnly(todayInBelgrade());
-  const day = today.getUTCDay();
-  const daysToMonday = day === 0 ? 1 : day === 1 ? 0 : 8 - day;
-  return addDays(today, daysToMonday);
-}
-
-function allowedSlotIds() {
-  const firstMonday = getOpeningMonday();
-  const allowed = new Set();
-  [0, 1].forEach((week) => {
-    [0, 1, 2, 3, 4].forEach((day) => {
-      const date = formatDateOnly(addDays(firstMonday, week * 7 + day));
-      HOURS.forEach((hour) => allowed.add(`${date}-${String(hour).padStart(2, "0")}`));
-    });
-  });
-  return allowed;
 }
 
 function getBookingsStore() {
@@ -97,32 +48,25 @@ function validateUpdate(body, currentBooking) {
 
 async function updateBooking(id, body) {
   const store = getBookingsStore();
-  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt += 1) {
-    const { bookings, etag } = await readEntry(store);
-    const index = bookings.findIndex((booking) => booking.id === id);
-    if (index < 0) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
-    const data = validateUpdate(body, bookings[index]);
-    const occupied = new Set(bookings.filter((booking) => booking.id !== id).flatMap((booking) => booking.slots || []));
-    if (data.slots.some((slot) => occupied.has(slot))) throw Object.assign(new Error("Jedan od izabranih termina je već zauzet."), { status: 409 });
-    const updated = { ...bookings[index], ...data, updatedAt: new Date().toISOString() };
-    const nextBookings = [...bookings];
-    nextBookings[index] = updated;
-    const result = await store.setJSON(BOOKINGS_KEY, nextBookings, etag ? { onlyIfMatch: etag } : { onlyIfNew: true });
-    if (result.modified) return updated;
-  }
-  throw Object.assign(new Error("Raspored je upravo promenjen. Pokušaj ponovo."), { status: 409 });
+  const { bookings } = await readEntry(store);
+  const index = bookings.findIndex((booking) => booking.id === id);
+  if (index < 0) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
+  const data = validateUpdate(body, bookings[index]);
+  const occupied = new Set(bookings.filter((booking) => booking.id !== id).flatMap((booking) => booking.slots || []));
+  if (data.slots.some((slot) => occupied.has(slot))) throw Object.assign(new Error("Jedan od izabranih termina je već zauzet."), { status: 409 });
+  const updated = { ...bookings[index], ...data, updatedAt: new Date().toISOString() };
+  const nextBookings = [...bookings];
+  nextBookings[index] = updated;
+  await store.setJSON(BOOKINGS_KEY, nextBookings);
+  return updated;
 }
 
 async function deleteBooking(id) {
   const store = getBookingsStore();
-  for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt += 1) {
-    const { bookings, etag } = await readEntry(store);
-    if (!bookings.some((booking) => booking.id === id)) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
-    const nextBookings = bookings.filter((booking) => booking.id !== id);
-    const result = await store.setJSON(BOOKINGS_KEY, nextBookings, etag ? { onlyIfMatch: etag } : { onlyIfNew: true });
-    if (result.modified) return;
-  }
-  throw Object.assign(new Error("Raspored je upravo promenjen. Pokušaj ponovo."), { status: 409 });
+  const { bookings } = await readEntry(store);
+  if (!bookings.some((booking) => booking.id === id)) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
+  const nextBookings = bookings.filter((booking) => booking.id !== id);
+  await store.setJSON(BOOKINGS_KEY, nextBookings);
 }
 
 export default async (request) => {
@@ -136,6 +80,8 @@ export default async (request) => {
       return jsonResponse({
         bookings: [...bookings].sort((left, right) => String(left.slots?.[0] || "").localeCompare(String(right.slots?.[0] || ""))),
         openingMonday: formatDateOnly(getOpeningMonday()),
+        today: todayInBelgrade(),
+        closingDate: formatDateOnly(getClosingDate()),
         username: session.username
       });
     }
