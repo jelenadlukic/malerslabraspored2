@@ -512,7 +512,7 @@
     button.disabled = true;
     button.textContent = "Prijavljivanje…";
     try {
-      await api(TEACHER_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) });
+      await api(TEACHER_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password"), remember: form.get("remember") === "on" }) });
       loginForm.reset();
       passwordInput.type = "password";
       passwordToggle.setAttribute("aria-pressed", "false");

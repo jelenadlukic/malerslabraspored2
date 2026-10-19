@@ -36,9 +36,9 @@ export default async (request) => {
       return jsonResponse({ error: "Pogrešno korisničko ime ili lozinka." }, 401);
     }
     return jsonResponse(
-      { authenticated: true, username: "nastavnik" },
+      { authenticated: true, username: "nastavnik", remembered: body.remember === true },
       200,
-      { "Set-Cookie": createTeacherSessionCookie(request) }
+      { "Set-Cookie": createTeacherSessionCookie(request, body.remember === true) }
     );
   }
 

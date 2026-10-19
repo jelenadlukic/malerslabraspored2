@@ -358,6 +358,15 @@ dialog::backdrop { background: rgba(17, 17, 17, .7); backdrop-filter: blur(4px);
 .password-toggle .eye-closed { display: none; }
 .password-toggle[aria-pressed="true"] .eye-open { display: none; }
 .password-toggle[aria-pressed="true"] .eye-closed { display: block; }
+.remember-control { position: relative; margin-top: 18px; display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 11px; cursor: pointer; }
+.remember-control input { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.remember-box { width: 24px; height: 24px; display: grid; place-items: center; background: var(--white); border: 2px solid var(--black); border-radius: 6px; box-shadow: 2px 2px 0 var(--black); transition: background .15s ease, transform .15s ease, box-shadow .15s ease; }
+.remember-control input:checked + .remember-box { background: var(--yellow); transform: translate(1px, 1px); box-shadow: 1px 1px 0 var(--black); }
+.remember-control input:checked + .remember-box::after { content: ""; width: 10px; height: 6px; border-bottom: 3px solid var(--black); border-left: 3px solid var(--black); transform: translateY(-1px) rotate(-45deg); }
+.remember-control input:focus-visible + .remember-box { outline: 3px solid var(--yellow); outline-offset: 3px; }
+.remember-control strong, .remember-control small { display: block; }
+.remember-control strong { font-size: .88rem; }
+.remember-control small { margin-top: 2px; color: var(--gray-600); font-size: .74rem; line-height: 1.35; }
 .compact-field { max-width: 250px; }
 .form-error { min-height: 21px; margin: 10px 0; color: #a31414; font-size: .84rem; font-weight: 700; }
 .privacy-copy { margin: 10px 0 0; color: var(--gray-600); font-size: .74rem; text-align: center; }

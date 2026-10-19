@@ -2,6 +2,7 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 const COOKIE_NAME = "ml_teacher_session";
 const SESSION_SECONDS = 8 * 60 * 60;
+const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
 const USERNAME = "nastavnik";
 const PASSWORD_HASH = "85debf5bace9bf38f0d8fafd243d5ac91f375bbe43bd8a80710fbbc5aca8529c";
 
@@ -40,14 +41,16 @@ export function teacherCredentialsAreValid(username, password) {
   return normalizedUser === USERNAME && safeEqual(passwordHash, PASSWORD_HASH);
 }
 
-export function createTeacherSessionCookie(request) {
+export function createTeacherSessionCookie(request, remember = false) {
+  const duration = remember ? REMEMBERED_SESSION_SECONDS : SESSION_SECONDS;
   const payload = Buffer.from(JSON.stringify({
     username: USERNAME,
-    expiresAt: Date.now() + SESSION_SECONDS * 1000
+    expiresAt: Date.now() + duration * 1000
   })).toString("base64url");
   const token = `${payload}.${signature(payload)}`;
   const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
-  return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly${secure}; SameSite=Strict; Max-Age=${SESSION_SECONDS}`;
+  const persistence = remember ? `; Max-Age=${duration}` : "";
+  return `${COOKIE_NAME}=${encodeURIComponent(token)}; Path=/; HttpOnly${secure}; SameSite=Strict${persistence}`;
 }
 
 export function clearTeacherSessionCookie(request) {
