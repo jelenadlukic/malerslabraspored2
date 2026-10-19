@@ -16,13 +16,22 @@
   const slotsEditor = document.querySelector("#slots-editor");
   const deleteDialog = document.querySelector("#delete-dialog");
   const adminToast = document.querySelector("#admin-toast");
+  const permanentList = document.querySelector("#permanent-list");
+  const permanentMessage = document.querySelector("#permanent-message");
+  const permanentDialog = document.querySelector("#permanent-dialog");
+  const permanentForm = document.querySelector("#permanent-form");
+  const permanentError = document.querySelector("#permanent-error");
 
   const DAYS = ["Ned", "Pon", "Uto", "Sre", "Čet", "Pet", "Sub"];
   const MONTHS = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "avg", "sep", "okt", "nov", "dec"];
   const HOURS = Array.from({ length: 11 }, (_, index) => index + 7);
   const ADMIN_AUTH_URL = "/.netlify/functions/admin-auth";
   const ADMIN_BOOKINGS_URL = "/.netlify/functions/admin-bookings";
+  const TEACHER_AUTH_URL = "/.netlify/functions/teacher-auth";
+  const PERMANENT_SLOTS_URL = "/.netlify/functions/permanent-slots";
   let bookings = [];
+  let permanentSlots = [];
+  let bookingWindow = { today: "", closingDate: "" };
   let pendingDeleteId = null;
   let toastTimer;
 
@@ -69,10 +78,14 @@
     try {
       const session = await api(ADMIN_AUTH_URL);
       showDashboard(session.username);
-      await loadBookings();
+      await loadAdminData();
     } catch {
       showLogin();
     }
+  }
+
+  async function loadAdminData() {
+    await Promise.all([loadBookings(), loadPermanentSlots()]);
   }
 
   async function loadBookings() {
@@ -80,12 +93,26 @@
     try {
       const data = await api(ADMIN_BOOKINGS_URL);
       bookings = Array.isArray(data.bookings) ? data.bookings : [];
+      bookingWindow = { today: data.today || "", closingDate: data.closingDate || "" };
       adminUsername.textContent = data.username || adminUsername.textContent;
       adminMessage.textContent = "";
       renderBookings();
     } catch (error) {
       if (error.status === 401) showLogin();
       else adminMessage.textContent = error.message;
+    }
+  }
+
+  async function loadPermanentSlots() {
+    permanentMessage.textContent = "Učitavanje trajnih termina…";
+    try {
+      const data = await api(PERMANENT_SLOTS_URL);
+      permanentSlots = Array.isArray(data.permanentSlots) ? data.permanentSlots : [];
+      permanentMessage.textContent = "";
+      renderPermanentSlots();
+    } catch (error) {
+      if (error.status === 401) showLogin();
+      else permanentMessage.textContent = error.message;
     }
   }
 
@@ -110,10 +137,28 @@
     `).join("");
   }
 
+  function renderPermanentSlots() {
+    const dayNames = ["Nedelja", "Ponedeljak", "Utorak", "Sreda", "Četvrtak", "Petak", "Subota"];
+    const sorted = [...permanentSlots].sort((left, right) => Number(left.day) - Number(right.day) || Number(left.fromHour) - Number(right.fromHour));
+    if (!sorted.length) {
+      permanentList.innerHTML = '<div class="empty-state compact-empty">Nema trajnih termina.</div>';
+      return;
+    }
+    permanentList.innerHTML = sorted.map((slot) => `
+      <article class="permanent-row" data-permanent-id="${escapeHtml(slot.id)}">
+        <span class="permanent-day">${escapeHtml(dayNames[Number(slot.day)] || "")}</span>
+        <strong>${escapeHtml(slot.name)}</strong>
+        <span class="permanent-time">${String(slot.fromHour).padStart(2, "0")}:00 – ${String(slot.toHour).padStart(2, "0")}:00</span>
+        <button class="row-button delete" type="button" data-action="delete-permanent">Ukloni</button>
+      </article>
+    `).join("");
+  }
+
   function slotRow(slotId = "") {
     const slot = parseSlot(slotId) || { date: "", hour: 7 };
     const options = HOURS.map((hour) => `<option value="${hour}"${hour === slot.hour ? " selected" : ""}>${String(hour).padStart(2, "0")}:00 – ${String(hour + 1).padStart(2, "0")}:00</option>`).join("");
-    return `<div class="slot-editor-row"><input type="date" value="${escapeHtml(slot.date)}" required aria-label="Datum termina"><select aria-label="Vreme termina">${options}</select><button class="remove-slot" type="button" aria-label="Ukloni termin">×</button></div>`;
+    const limits = `${bookingWindow.today ? ` min="${escapeHtml(bookingWindow.today)}"` : ""}${bookingWindow.closingDate ? ` max="${escapeHtml(bookingWindow.closingDate)}"` : ""}`;
+    return `<div class="slot-editor-row"><input type="date" value="${escapeHtml(slot.date)}"${limits} required aria-label="Datum termina"><select aria-label="Vreme termina">${options}</select><button class="remove-slot" type="button" aria-label="Ukloni termin">×</button></div>`;
   }
 
   function addSlotRow(slotId = "") {
@@ -136,7 +181,39 @@
     (booking.slots || []).forEach((slot) => addSlotRow(slot));
     if (!slotsEditor.children.length) addSlotRow();
     editError.textContent = "";
+    document.querySelector("#edit-kicker").textContent = "Izmena rezervacije";
+    document.querySelector("#edit-title").textContent = "Podaci i termini";
+    document.querySelector("#save-booking").textContent = "Sačuvaj izmene";
     editDialog.showModal();
+  }
+
+  function openCreate() {
+    editForm.reset();
+    editForm.elements.id.value = "";
+    slotsEditor.innerHTML = "";
+    addSlotRow();
+    editError.textContent = "";
+    document.querySelector("#edit-kicker").textContent = "Nova rezervacija";
+    document.querySelector("#edit-title").textContent = "Podaci i termini";
+    document.querySelector("#save-booking").textContent = "Dodaj rezervaciju";
+    editDialog.showModal();
+  }
+
+  function setupPermanentTimeOptions() {
+    const from = permanentForm.elements.fromHour;
+    const to = permanentForm.elements.toHour;
+    from.innerHTML = HOURS.slice(0, -1).map((hour) => `<option value="${hour}">${String(hour).padStart(2, "0")}:00</option>`).join("");
+    from.value = "12";
+    updatePermanentEndOptions();
+    to.value = "14";
+  }
+
+  function updatePermanentEndOptions() {
+    const fromHour = Number(permanentForm.elements.fromHour.value || 7);
+    const currentValue = Number(permanentForm.elements.toHour.value);
+    permanentForm.elements.toHour.innerHTML = Array.from({ length: 18 - fromHour }, (_, index) => fromHour + index + 1)
+      .map((hour) => `<option value="${hour}">${String(hour).padStart(2, "0")}:00</option>`).join("");
+    permanentForm.elements.toHour.value = String(currentValue > fromHour ? currentValue : fromHour + 1);
   }
 
   function collectSlots() {
@@ -172,7 +249,7 @@
       const session = await api(ADMIN_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password") }) });
       loginForm.reset();
       showDashboard(session.username);
-      await loadBookings();
+      await loadAdminData();
     } catch (error) {
       loginError.textContent = error.message;
     } finally {
@@ -182,13 +259,25 @@
   });
 
   document.querySelector("#logout-button").addEventListener("click", async () => {
-    await api(ADMIN_AUTH_URL, { method: "DELETE" }).catch(() => {});
+    await Promise.all([
+      api(ADMIN_AUTH_URL, { method: "DELETE" }).catch(() => {}),
+      api(TEACHER_AUTH_URL, { method: "DELETE" }).catch(() => {})
+    ]);
     bookings = [];
+    permanentSlots = [];
     showLogin();
   });
-  document.querySelector("#refresh-button").addEventListener("click", loadBookings);
+  document.querySelector("#refresh-button").addEventListener("click", loadAdminData);
+  document.querySelector("#create-booking").addEventListener("click", openCreate);
+  document.querySelector("#create-permanent").addEventListener("click", () => {
+    permanentForm.reset();
+    setupPermanentTimeOptions();
+    permanentError.textContent = "";
+    permanentDialog.showModal();
+  });
   searchInput.addEventListener("input", renderBookings);
   document.querySelector("#close-edit").addEventListener("click", () => editDialog.close());
+  document.querySelector("#close-permanent").addEventListener("click", () => permanentDialog.close());
   document.querySelector("#add-slot").addEventListener("click", () => addSlotRow());
   slotsEditor.addEventListener("click", (event) => {
     const button = event.target.closest(".remove-slot");
@@ -205,6 +294,23 @@
     if (action.dataset.action === "delete") openDelete(booking);
   });
 
+  permanentList.addEventListener("click", async (event) => {
+    const button = event.target.closest('[data-action="delete-permanent"]');
+    if (!button) return;
+    const row = button.closest("[data-permanent-id]");
+    const slot = permanentSlots.find((item) => item.id === row?.dataset.permanentId);
+    if (!slot || !window.confirm(`Ukloniti trajni termin „${slot.name}“?`)) return;
+    button.disabled = true;
+    try {
+      await api(`${PERMANENT_SLOTS_URL}?id=${encodeURIComponent(slot.id)}`, { method: "DELETE" });
+      await loadPermanentSlots();
+      showToast("Trajni termin je uklonjen", slot.name);
+    } catch (error) {
+      permanentMessage.textContent = error.message;
+      button.disabled = false;
+    }
+  });
+
   editForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     editError.textContent = "";
@@ -213,19 +319,43 @@
     const payload = { teacher: form.get("teacher"), purpose: form.get("purpose"), students: Number(form.get("students")), slots: collectSlots() };
     button.disabled = true;
     button.textContent = "Čuvanje…";
+    const id = String(form.get("id") || "");
     try {
-      await api(`${ADMIN_BOOKINGS_URL}?id=${encodeURIComponent(form.get("id"))}`, { method: "PATCH", body: JSON.stringify(payload) });
+      const url = id ? `${ADMIN_BOOKINGS_URL}?id=${encodeURIComponent(id)}` : ADMIN_BOOKINGS_URL;
+      await api(url, { method: id ? "PATCH" : "POST", body: JSON.stringify(payload) });
       editDialog.close();
       await loadBookings();
-      showToast("Izmene su sačuvane", payload.teacher);
+      showToast(id ? "Izmene su sačuvane" : "Rezervacija je dodata", payload.teacher);
     } catch (error) {
       if (error.status === 401) { editDialog.close(); showLogin(); }
       else editError.textContent = error.message;
     } finally {
       button.disabled = false;
-      button.textContent = "Sačuvaj izmene";
+      button.textContent = id ? "Sačuvaj izmene" : "Dodaj rezervaciju";
     }
   });
+
+  permanentForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    permanentError.textContent = "";
+    const button = permanentForm.querySelector('[type="submit"]');
+    const form = new FormData(permanentForm);
+    const payload = { name: form.get("name"), day: Number(form.get("day")), fromHour: Number(form.get("fromHour")), toHour: Number(form.get("toHour")) };
+    button.disabled = true;
+    button.textContent = "Dodavanje…";
+    try {
+      await api(PERMANENT_SLOTS_URL, { method: "POST", body: JSON.stringify(payload) });
+      permanentDialog.close();
+      await loadPermanentSlots();
+      showToast("Trajni termin je dodat", payload.name);
+    } catch (error) {
+      permanentError.textContent = error.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "Dodaj trajni termin";
+    }
+  });
+  permanentForm.elements.fromHour.addEventListener("change", updatePermanentEndOptions);
 
   document.querySelector("#cancel-delete").addEventListener("click", () => { pendingDeleteId = null; deleteDialog.close(); });
   document.querySelector("#confirm-delete").addEventListener("click", async () => {
@@ -247,6 +377,7 @@
     }
   });
 
-  [editDialog, deleteDialog].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
+  [editDialog, permanentDialog, deleteDialog].forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
+  setupPermanentTimeOptions();
   checkSession();
 })();

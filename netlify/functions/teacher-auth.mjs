@@ -3,7 +3,7 @@ import {
   clearTeacherSessionCookie,
   createTeacherSessionCookie,
   getTeacherSession,
-  teacherCredentialsAreValid
+  authenticateUser
 } from "./_shared/teacher-session.mjs";
 
 function jsonResponse(payload, status = 200, extraHeaders = {}) {
@@ -21,7 +21,7 @@ function jsonResponse(payload, status = 200, extraHeaders = {}) {
 export default async (request) => {
   if (request.method === "GET") {
     const session = getTeacherSession(request);
-    return jsonResponse({ authenticated: Boolean(session), username: session?.username || null }, session ? 200 : 401);
+    return jsonResponse({ authenticated: Boolean(session), username: session?.username || null, role: session?.role || null, isAdmin: session?.role === "admin" }, session ? 200 : 401);
   }
 
   if (request.method === "POST") {
@@ -32,13 +32,14 @@ export default async (request) => {
     } catch {
       return jsonResponse({ error: "Neispravan zahtev." }, 400);
     }
-    if (!teacherCredentialsAreValid(body.username, body.password)) {
+    const user = authenticateUser(body.username, body.password);
+    if (!user) {
       return jsonResponse({ error: "Pogrešno korisničko ime ili lozinka." }, 401);
     }
     return jsonResponse(
-      { authenticated: true, username: "nastavnik", remembered: body.remember === true },
+      { authenticated: true, username: user.username, role: user.role, isAdmin: user.role === "admin", remembered: body.remember === true },
       200,
-      { "Set-Cookie": createTeacherSessionCookie(request, body.remember === true) }
+      { "Set-Cookie": createTeacherSessionCookie(request, user, body.remember === true) }
     );
   }
 

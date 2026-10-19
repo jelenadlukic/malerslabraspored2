@@ -3,8 +3,11 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 const COOKIE_NAME = "ml_teacher_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
-const USERNAME = "nastavnik";
-const PASSWORD_HASH = "85debf5bace9bf38f0d8fafd243d5ac91f375bbe43bd8a80710fbbc5aca8529c";
+const USERS = new Map([
+  ["nastavnik", { role: "teacher", passwordHash: "85debf5bace9bf38f0d8fafd243d5ac91f375bbe43bd8a80710fbbc5aca8529c" }],
+  ["direktor", { role: "admin", passwordHash: "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60" }],
+  ["koordinator", { role: "admin", passwordHash: "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60" }]
+]);
 
 function safeEqual(left, right) {
   const leftBuffer = Buffer.from(String(left));
@@ -14,7 +17,8 @@ function safeEqual(left, right) {
 }
 
 function sessionSecret() {
-  return process.env.TEACHER_SESSION_SECRET || `mejkers-lab:${PASSWORD_HASH}`;
+  const passwordHashes = [...USERS.values()].map((user) => user.passwordHash).join(":");
+  return process.env.TEACHER_SESSION_SECRET || `mejkers-lab:${passwordHashes}`;
 }
 
 function signature(value) {
@@ -35,16 +39,26 @@ function readCookie(request) {
   return "";
 }
 
-export function teacherCredentialsAreValid(username, password) {
+export function authenticateUser(username, password) {
   const normalizedUser = String(username || "").trim().toLowerCase();
+  const user = USERS.get(normalizedUser);
+  if (!user) return null;
   const passwordHash = createHash("sha256").update(String(password || "")).digest("hex");
-  return normalizedUser === USERNAME && safeEqual(passwordHash, PASSWORD_HASH);
+  if (!safeEqual(passwordHash, user.passwordHash)) return null;
+  return { username: normalizedUser, role: user.role };
 }
 
-export function createTeacherSessionCookie(request, remember = false) {
+export function teacherCredentialsAreValid(username, password) {
+  return Boolean(authenticateUser(username, password));
+}
+
+export function createTeacherSessionCookie(request, userOrRemember = { username: "nastavnik", role: "teacher" }, rememberArgument = false) {
+  const user = typeof userOrRemember === "boolean" ? { username: "nastavnik", role: "teacher" } : userOrRemember;
+  const remember = typeof userOrRemember === "boolean" ? userOrRemember : rememberArgument;
   const duration = remember ? REMEMBERED_SESSION_SECONDS : SESSION_SECONDS;
   const payload = Buffer.from(JSON.stringify({
-    username: USERNAME,
+    username: user.username,
+    role: user.role,
     expiresAt: Date.now() + duration * 1000
   })).toString("base64url");
   const token = `${payload}.${signature(payload)}`;
@@ -67,8 +81,9 @@ export function getTeacherSession(request) {
   if (!safeEqual(receivedSignature, signature(payload))) return null;
   try {
     const session = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-    if (session.username !== USERNAME || Number(session.expiresAt) <= Date.now()) return null;
-    return session;
+    const user = USERS.get(session.username);
+    if (!user || user.role !== session.role || Number(session.expiresAt) <= Date.now()) return null;
+    return { username: session.username, role: session.role, expiresAt: session.expiresAt };
   } catch {
     return null;
   }

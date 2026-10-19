@@ -80,6 +80,7 @@
   const attendanceSearch = document.querySelector("#attendance-search");
   const passwordInput = document.querySelector("#teacher-password");
   const passwordToggle = document.querySelector("#password-toggle");
+  const adminLink = document.querySelector("#admin-link");
   const pageLinks = [...document.querySelectorAll("[data-page-link]")];
   const pageViews = [...document.querySelectorAll("[data-page]")];
 
@@ -87,6 +88,7 @@
   let currentWeek = 0;
   let mobileDay = 0;
   let bookings = [];
+  let permanentSlots = [];
   let attendanceRecords = [];
   let attendanceLoaded = false;
   let openingMonday = currentMonday();
@@ -158,13 +160,15 @@
     appContent.hidden = true;
     headerActions.hidden = true;
     document.body.classList.remove("is-authenticated");
+    adminLink.hidden = true;
   }
 
-  function showApp() {
+  function showApp(session = {}) {
     loginView.hidden = true;
     appContent.hidden = false;
     headerActions.hidden = false;
     document.body.classList.add("is-authenticated");
+    adminLink.hidden = session.isAdmin !== true && session.role !== "admin";
     showPage(pageFromHash(), { updateHash: false });
   }
 
@@ -191,8 +195,8 @@
 
   async function checkSession() {
     try {
-      await api(TEACHER_AUTH_URL);
-      showApp();
+      const session = await api(TEACHER_AUTH_URL);
+      showApp(session);
       await loadBookings();
     } catch {
       showLogin();
@@ -204,6 +208,7 @@
     try {
       const data = await api(BOOKINGS_URL);
       bookings = Array.isArray(data.bookings) ? data.bookings : [];
+      permanentSlots = Array.isArray(data.permanentSlots) ? data.permanentSlots : [];
       if (data.openingMonday) openingMonday = parseIsoDate(data.openingMonday);
       if (data.today) today = parseIsoDate(data.today);
       if (data.closingDate) closingDate = parseIsoDate(data.closingDate);
@@ -273,8 +278,8 @@
     return value < startOfDay(today) || value > startOfDay(closingDate);
   }
 
-  function isMicrocontrollerSlot(date, hour) {
-    return (date.getDay() === 2 || date.getDay() === 4) && (hour === 12 || hour === 13);
+  function getPermanentSlot(date, hour) {
+    return permanentSlots.find((slot) => Number(slot.day) === date.getDay() && hour >= Number(slot.fromHour) && hour < Number(slot.toHour)) || null;
   }
 
   function render() {
@@ -322,7 +327,7 @@
         const picked = selected.includes(id);
         const past = isPast(date, hour);
         const outside = isOutsideWindow(date);
-        const reserved = isMicrocontrollerSlot(date, hour);
+        const permanentSlot = getPermanentSlot(date, hour);
         let className = "slot";
         let label = "Slobodno";
         let disabled = "";
@@ -337,10 +342,10 @@
           label = outside && startOfDay(date) > startOfDay(closingDate) ? "Van perioda" : "Nedostupno";
           action = label;
           disabled = " disabled";
-        } else if (reserved) {
+        } else if (permanentSlot) {
           className += " reserved";
-          label = "Sekcija mikrokontrolera";
-          action = "Trajni termin svake nedelje za sekciju mikrokontrolera";
+          label = escapeHtml(permanentSlot.name);
+          action = `Trajni termin svake nedelje: ${permanentSlot.name}`;
           disabled = " disabled";
         } else if (picked) {
           className += " selected";
@@ -512,12 +517,12 @@
     button.disabled = true;
     button.textContent = "Prijavljivanje…";
     try {
-      await api(TEACHER_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password"), remember: form.get("remember") === "on" }) });
+      const session = await api(TEACHER_AUTH_URL, { method: "POST", body: JSON.stringify({ username: form.get("username"), password: form.get("password"), remember: form.get("remember") === "on" }) });
       loginForm.reset();
       passwordInput.type = "password";
       passwordToggle.setAttribute("aria-pressed", "false");
       passwordToggle.setAttribute("aria-label", "Prikaži lozinku");
-      showApp();
+      showApp(session);
       await loadBookings();
     } catch (error) {
       loginError.textContent = error.message;
@@ -544,6 +549,7 @@
   document.querySelector("#logout-button").addEventListener("click", async () => {
     await api(TEACHER_AUTH_URL, { method: "DELETE" }).catch(() => {});
     bookings = [];
+    permanentSlots = [];
     attendanceRecords = [];
     attendanceLoaded = false;
     selected = [];

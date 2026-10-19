@@ -19,7 +19,7 @@
         </a>
         <p class="section-kicker">Zaštićen pristup</p>
         <h1 id="login-title">Prijava</h1>
-        <p class="login-copy">Prijavite se da biste uređivali i brisali rezervacije.</p>
+        <p class="login-copy">Prijavite se da biste upravljali rezervacijama i trajnim terminima.</p>
         <label class="field">
           <span>Korisničko ime</span>
           <input name="username" type="text" autocomplete="username" required placeholder="Korisničko ime">
@@ -60,11 +60,24 @@
             <span class="sr-only">Pretraži rezervacije</span>
             <input id="booking-search" type="search" placeholder="Pretraži nastavnika ili svrhu…">
           </label>
-          <button class="secondary-button" id="refresh-button" type="button">Osveži</button>
+          <button class="primary-button admin-toolbar-button" id="create-booking" type="button">+ Dodaj rezervaciju</button>
+          <button class="secondary-button admin-toolbar-button" id="refresh-button" type="button">Osveži</button>
         </div>
 
         <p class="admin-message" id="admin-message" role="status"></p>
         <div class="bookings-list" id="bookings-list" aria-live="polite"></div>
+
+        <section class="permanent-section" aria-labelledby="permanent-title">
+          <div class="permanent-heading">
+            <div>
+              <p class="section-kicker">Ponavlja se svake nedelje</p>
+              <h2 id="permanent-title">Trajni termini</h2>
+            </div>
+            <button class="primary-button admin-toolbar-button" id="create-permanent" type="button">+ Dodaj trajni termin</button>
+          </div>
+          <p class="admin-message" id="permanent-message" role="status"></p>
+          <div class="permanent-list" id="permanent-list" aria-live="polite"></div>
+        </section>
       </div>
     </section>
   </main>
@@ -74,8 +87,8 @@
       <button class="dialog-close" id="close-edit" type="button" aria-label="Zatvori prozor">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
       </button>
-      <p class="section-kicker">Izmena rezervacije</p>
-      <h2>Podaci i termini</h2>
+      <p class="section-kicker" id="edit-kicker">Izmena rezervacije</p>
+      <h2 id="edit-title">Podaci i termini</h2>
       <input name="id" type="hidden">
       <label class="field">
         <span>Ime i prezime nastavnika</span>
@@ -96,7 +109,38 @@
       <div class="slots-editor" id="slots-editor"></div>
       <p class="field-help">Može biti od jednog do tri termina. Novi datum mora biti u trenutno otvorenom periodu.</p>
       <p class="form-error" id="edit-error" role="alert"></p>
-      <button class="primary-button full-width" type="submit">Sačuvaj izmene</button>
+      <button class="primary-button full-width" id="save-booking" type="submit">Sačuvaj izmene</button>
+    </form>
+  </dialog>
+
+  <dialog class="admin-dialog" id="permanent-dialog">
+    <form class="admin-dialog-card" id="permanent-form">
+      <button class="dialog-close" id="close-permanent" type="button" aria-label="Zatvori prozor">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+      <p class="section-kicker">Nedeljno zauzeće</p>
+      <h2>Novi trajni termin</h2>
+      <label class="field">
+        <span>Naziv sekcije ili aktivnosti</span>
+        <input name="name" type="text" required minlength="3" maxlength="80" placeholder="Na primer: Robotika">
+      </label>
+      <label class="field">
+        <span>Dan u nedelji</span>
+        <select name="day" required>
+          <option value="1">Ponedeljak</option>
+          <option value="2">Utorak</option>
+          <option value="3">Sreda</option>
+          <option value="4">Četvrtak</option>
+          <option value="5">Petak</option>
+        </select>
+      </label>
+      <div class="permanent-time-fields">
+        <label class="field"><span>Od</span><select name="fromHour" required></select></label>
+        <label class="field"><span>Do</span><select name="toHour" required></select></label>
+      </div>
+      <p class="field-help">Termin će biti zauzet izabrani dan svake nedelje.</p>
+      <p class="form-error" id="permanent-error" role="alert"></p>
+      <button class="primary-button full-width" type="submit">Dodaj trajni termin</button>
     </form>
   </dialog>
 

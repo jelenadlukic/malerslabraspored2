@@ -1,6 +1,9 @@
 import { getStore } from "@netlify/blobs";
-import { getAdminSession, requestOriginIsValid } from "./_shared/admin-session.mjs";
+import { randomUUID } from "node:crypto";
+import { getAuthorizedAdminSession } from "./_shared/admin-access.mjs";
+import { requestOriginIsValid } from "./_shared/admin-session.mjs";
 import { recordAttendance } from "./_shared/attendance-store.mjs";
+import { readPermanentSlots } from "./_shared/permanent-slots-store.mjs";
 import { allowedSlotIds, formatDateOnly, getClosingDate, getOpeningMonday, todayInBelgrade } from "./_shared/schedule.mjs";
 
 const STORE_NAME = "mejkers-lab-raspored";
@@ -27,7 +30,7 @@ async function readEntry(store) {
   return { bookings: Array.isArray(entry.data) ? entry.data : [], etag: entry.etag };
 }
 
-function validateUpdate(body, currentBooking) {
+function validateBooking(body, permanentSlots, currentBooking = null) {
   const teacher = typeof body.teacher === "string" ? body.teacher.trim() : "";
   const purpose = typeof body.purpose === "string" ? body.purpose.trim() : "";
   const students = Number(body.students);
@@ -38,10 +41,10 @@ function validateUpdate(body, currentBooking) {
   if (slots.length < 1 || slots.length > 3 || slots.some((slot) => typeof slot !== "string" || !/^\d{4}-\d{2}-\d{2}-\d{2}$/.test(slot))) {
     throw Object.assign(new Error("Rezervacija mora imati od jednog do tri ispravna termina."), { status: 400 });
   }
-  const oldSlots = [...currentBooking.slots].sort().join("|");
+  const oldSlots = currentBooking ? [...currentBooking.slots].sort().join("|") : "";
   const newSlots = [...slots].sort().join("|");
   if (oldSlots !== newSlots) {
-    const allowed = allowedSlotIds();
+    const allowed = allowedSlotIds(permanentSlots);
     if (slots.some((slot) => !allowed.has(slot))) throw Object.assign(new Error("Novi termin mora biti u trenutno otvorenom periodu rezervacija."), { status: 400 });
   }
   return { teacher, purpose, students, slots: slots.sort() };
@@ -49,10 +52,10 @@ function validateUpdate(body, currentBooking) {
 
 async function updateBooking(id, body) {
   const store = getBookingsStore();
-  const { bookings } = await readEntry(store);
+  const [{ bookings }, permanentSlots] = await Promise.all([readEntry(store), readPermanentSlots(store)]);
   const index = bookings.findIndex((booking) => booking.id === id);
   if (index < 0) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
-  const data = validateUpdate(body, bookings[index]);
+  const data = validateBooking(body, permanentSlots, bookings[index]);
   const occupied = new Set(bookings.filter((booking) => booking.id !== id).flatMap((booking) => booking.slots || []));
   if (data.slots.some((slot) => occupied.has(slot))) throw Object.assign(new Error("Jedan od izabranih termina je već zauzet."), { status: 409 });
   const updated = { ...bookings[index], ...data, updatedAt: new Date().toISOString() };
@@ -67,6 +70,22 @@ async function updateBooking(id, body) {
   return updated;
 }
 
+async function createBooking(body) {
+  const store = getBookingsStore();
+  const [{ bookings }, permanentSlots] = await Promise.all([readEntry(store), readPermanentSlots(store)]);
+  const data = validateBooking(body, permanentSlots);
+  const occupied = new Set(bookings.flatMap((booking) => booking.slots || []));
+  if (data.slots.some((slot) => occupied.has(slot))) throw Object.assign(new Error("Jedan od izabranih termina je već zauzet."), { status: 409 });
+  const booking = { id: randomUUID(), ...data, createdAt: new Date().toISOString() };
+  await store.setJSON(BOOKINGS_KEY, [...bookings, booking]);
+  try {
+    await recordAttendance(store, booking);
+  } catch (error) {
+    console.error("Rezervacija je sačuvana, ali arhiva nije odmah ažurirana.", error);
+  }
+  return booking;
+}
+
 async function deleteBooking(id) {
   const store = getBookingsStore();
   const { bookings } = await readEntry(store);
@@ -79,7 +98,7 @@ async function deleteBooking(id) {
 
 export default async (request) => {
   try {
-    const session = getAdminSession(request);
+    const session = getAuthorizedAdminSession(request);
     if (!session) return jsonResponse({ error: "Potrebna je prijava." }, 401);
     const url = new URL(request.url);
 
@@ -95,6 +114,17 @@ export default async (request) => {
     }
 
     if (!requestOriginIsValid(request)) return jsonResponse({ error: "Zahtev nije dozvoljen." }, 403);
+
+    if (request.method === "POST") {
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return jsonResponse({ error: "Neispravan zahtev." }, 400);
+      }
+      return jsonResponse({ booking: await createBooking(body) }, 201);
+    }
+
     const id = url.searchParams.get("id") || "";
     if (!id) return jsonResponse({ error: "Nedostaje identifikator rezervacije." }, 400);
 

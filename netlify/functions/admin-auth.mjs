@@ -2,10 +2,10 @@ import {
   clearSessionCookie,
   createSessionCookie,
   credentialsAreValid,
-  getAdminSession,
   passwordIsConfigured,
   requestOriginIsValid
 } from "./_shared/admin-session.mjs";
+import { getAuthorizedAdminSession } from "./_shared/admin-access.mjs";
 
 function jsonResponse(payload, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(payload), {
@@ -21,7 +21,7 @@ function jsonResponse(payload, status = 200, extraHeaders = {}) {
 
 export default async (request) => {
   if (request.method === "GET") {
-    const session = getAdminSession(request);
+    const session = getAuthorizedAdminSession(request);
     return jsonResponse({ authenticated: Boolean(session), username: session?.username || null }, session ? 200 : 401);
   }
 

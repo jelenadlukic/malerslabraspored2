@@ -4,7 +4,7 @@ Responsive aplikacija za rezervaciju termina u Mejkers Lab učionici. Raspored, 
 
 ## Pristup nastavnika
 
-Početna strana zahteva prijavu nastavnika pre učitavanja sadržaja. Obična prijava važi osam sati i završava se zatvaranjem pregledača, dok opcija „Zapamti me“ čuva bezbednu prijavu 30 dana bez čuvanja lozinke u pregledaču. Raspored, oprema i prisustvo su odvojeni prikazi u glavnoj navigaciji. Raspored dozvoljava rezervacije od današnjeg dana do 14 dana unapred, a vikendom se odmah otvara naredna radna nedelja. Termini Sekcije mikrokontrolera utorkom i četvrtkom od 12.00 do 14.00 trajno su blokirani za druge rezervacije.
+Početna strana zahteva prijavu pre učitavanja sadržaja. Obična prijava važi osam sati i završava se zatvaranjem pregledača, dok opcija „Zapamti me“ čuva bezbednu prijavu 30 dana bez čuvanja lozinke u pregledaču. Raspored, oprema i prisustvo su odvojeni prikazi u glavnoj navigaciji. Raspored dozvoljava rezervacije od današnjeg dana do 14 dana unapred, a vikendom se odmah otvara naredna radna nedelja. Termini Sekcije mikrokontrolera utorkom i četvrtkom od 12.00 do 14.00 početno su trajno blokirani za druge rezervacije.
 
 Inventar je podeljen na mašine i alate, pribor i setove, digitalnu opremu i nameštaj. Svaka evidentirana stavka ima sliku i količinu, a kompletan inventar može da se preuzme kao PDF dokument.
 
@@ -18,15 +18,7 @@ Projekat se objavljuje direktno iz ovog Git repozitorijuma. Netlify koristi pode
 - publish direktorijum: `dist`
 - serverless funkcije: `netlify/functions`
 
-Za nastavničku prijavu nije potrebno praviti ništa dodatno u Netlify-u. Aplikacija direktno koristi objavljenu funkciju `/.netlify/functions/teacher-auth`.
-
-Za administratorski panel u Netlify projektu, u odeljku **Environment variables**, dodaj:
-
-```text
-MEJKERS_PRISTUP=<lozinka-koju-unosiš-samo-u-Netlify-u>
-```
-
-Posle dodavanja promenljive pokreni novi deploy. Lozinka se namerno ne čuva u GitHub kodu.
+Za prijavu nije potrebno praviti ništa dodatno u Netlify-u. Aplikacija direktno koristi objavljene serverless funkcije, a lozinke se u kodu proveravaju preko kontrolnih hash vrednosti.
 
 ## Admin panel
 
@@ -37,7 +29,7 @@ Dozvoljena korisnička imena:
 - `direktor`
 - `koordinator`
 
-Oba korisnika koriste lozinku iz promenljive `MEJKERS_PRISTUP`. Prijava važi osam sati. Administrator može da pregleda sve rezervacije, pretražuje ih, menja podatke i termine, kao i da izbriše rezervaciju uz potvrdu.
+Direktor i koordinator prijavljuju se na istoj početnoj strani kao nastavnik, a zatim dobijaju dodatno dugme „Admin“. Administrator može da pregleda, pretražuje, dodaje, menja i briše rezervacije, kao i da dodaje i uklanja trajne nedeljne termine.
 
 ## Lokalna provera
 

@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { requestOriginIsValid } from "./_shared/admin-session.mjs";
 import { getTeacherSession } from "./_shared/teacher-session.mjs";
 import { recordAttendance } from "./_shared/attendance-store.mjs";
+import { readPermanentSlots } from "./_shared/permanent-slots-store.mjs";
 import {
   allowedSlotIds,
   formatDateOnly,
@@ -25,7 +26,7 @@ function jsonResponse(payload, status = 200) {
   });
 }
 
-function validateBooking(body) {
+function validateBooking(body, permanentSlots) {
   const teacher = typeof body.teacher === "string" ? body.teacher.trim() : "";
   const purpose = typeof body.purpose === "string" ? body.purpose.trim() : "";
   const students = Number(body.students);
@@ -35,7 +36,7 @@ function validateBooking(body) {
   if (purpose.length < 3 || purpose.length > 240) throw Object.assign(new Error("Svrha mora imati od 3 do 240 znakova."), { status: 400 });
   if (!Number.isInteger(students) || students < 1 || students > 40) throw Object.assign(new Error("Broj učenika mora biti između 1 i 40."), { status: 400 });
   if (slots.length < 1 || slots.length > 3 || slots.some((slot) => typeof slot !== "string")) throw Object.assign(new Error("Izaberi od jednog do tri termina."), { status: 400 });
-  const allowed = allowedSlotIds();
+  const allowed = allowedSlotIds(permanentSlots);
   if (slots.some((slot) => !allowed.has(slot))) throw Object.assign(new Error("Izabrani termin nije u dozvoljenom periodu."), { status: 400 });
   return { teacher, purpose, students, slots: slots.sort() };
 }
@@ -51,8 +52,9 @@ async function readEntry(store) {
 }
 
 async function createBooking(body) {
-  const data = validateBooking(body);
   const store = getBookingsStore();
+  const permanentSlots = await readPermanentSlots(store);
+  const data = validateBooking(body, permanentSlots);
 
   const { bookings, etag } = await readEntry(store);
   const occupied = new Set(bookings.flatMap((booking) => Array.isArray(booking.slots) ? booking.slots : []));
@@ -91,9 +93,11 @@ export default async (request) => {
     if (!getTeacherSession(request)) return jsonResponse({ error: "Potrebna je prijava nastavnika." }, 401);
 
     if (request.method === "GET") {
-      const { bookings } = await readEntry(getBookingsStore());
+      const store = getBookingsStore();
+      const [{ bookings }, permanentSlots] = await Promise.all([readEntry(store), readPermanentSlots(store)]);
       return jsonResponse({
         bookings,
+        permanentSlots,
         openingMonday: formatDateOnly(getOpeningMonday()),
         today: todayInBelgrade(),
         closingDate: formatDateOnly(getClosingDate()),

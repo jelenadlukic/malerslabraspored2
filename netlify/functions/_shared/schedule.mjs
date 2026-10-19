@@ -1,5 +1,9 @@
 const TIME_ZONE = "Europe/Belgrade";
 export const HOURS = Array.from({ length: 11 }, (_, index) => index + 7);
+export const DEFAULT_PERMANENT_SLOTS = [
+  { id: "mikrokontroleri-utorak", name: "Sekcija mikrokontrolera", day: 2, fromHour: 12, toHour: 14 },
+  { id: "mikrokontroleri-cetvrtak", name: "Sekcija mikrokontrolera", day: 4, fromHour: 12, toHour: 14 }
+];
 
 export function todayInBelgrade() {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -40,11 +44,15 @@ export function getClosingDate() {
 }
 
 export function isMicrocontrollerSlot(date, hour) {
-  const day = date.getUTCDay();
-  return (day === 2 || day === 4) && (hour === 12 || hour === 13);
+  return Boolean(findPermanentSlot(date, hour, DEFAULT_PERMANENT_SLOTS));
 }
 
-export function allowedSlotIds() {
+export function findPermanentSlot(date, hour, permanentSlots = DEFAULT_PERMANENT_SLOTS) {
+  const day = date.getUTCDay();
+  return permanentSlots.find((slot) => Number(slot.day) === day && hour >= Number(slot.fromHour) && hour < Number(slot.toHour)) || null;
+}
+
+export function allowedSlotIds(permanentSlots = DEFAULT_PERMANENT_SLOTS) {
   const today = parseDateOnly(todayInBelgrade());
   const closingDate = getClosingDate();
   const allowed = new Set();
@@ -55,7 +63,7 @@ export function allowedSlotIds() {
     if (day === 0 || day === 6) continue;
     const value = formatDateOnly(date);
     HOURS.forEach((hour) => {
-      if (!isMicrocontrollerSlot(date, hour) && date <= closingDate) {
+      if (!findPermanentSlot(date, hour, permanentSlots) && date <= closingDate) {
         allowed.add(`${value}-${String(hour).padStart(2, "0")}`);
       }
     });

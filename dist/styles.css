@@ -84,6 +84,7 @@ button { color: inherit; }
 .header-nav { display: flex; align-items: center; gap: 4px; }
 .header-nav a { width: 96px; min-height: 36px; padding: 0 10px; display: inline-flex; align-items: center; justify-content: center; color: #e9e9e4; border-radius: 7px; font-size: .82rem; font-weight: 800; text-align: center; text-decoration: none; }
 .header-nav a:hover, .header-nav a.is-active { color: var(--black); background: var(--yellow); }
+.header-nav a[hidden] { display: none; }
 .logout-button { width: 96px; min-height: 36px; padding: 0 10px; color: var(--white); background: transparent; border: 1px solid #555; border-radius: 8px; font-size: .78rem; font-weight: 800; cursor: pointer; }
 .logout-button:hover { color: var(--black); background: var(--yellow); border-color: var(--yellow); }
 
