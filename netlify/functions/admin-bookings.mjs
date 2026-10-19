@@ -1,5 +1,6 @@
 import { getStore } from "@netlify/blobs";
 import { getAdminSession, requestOriginIsValid } from "./_shared/admin-session.mjs";
+import { recordAttendance } from "./_shared/attendance-store.mjs";
 import { allowedSlotIds, formatDateOnly, getClosingDate, getOpeningMonday, todayInBelgrade } from "./_shared/schedule.mjs";
 
 const STORE_NAME = "mejkers-lab-raspored";
@@ -58,13 +59,20 @@ async function updateBooking(id, body) {
   const nextBookings = [...bookings];
   nextBookings[index] = updated;
   await store.setJSON(BOOKINGS_KEY, nextBookings);
+  try {
+    await recordAttendance(store, updated);
+  } catch (error) {
+    console.error("Izmena je sačuvana, ali arhiva nije odmah ažurirana.", error);
+  }
   return updated;
 }
 
 async function deleteBooking(id) {
   const store = getBookingsStore();
   const { bookings } = await readEntry(store);
-  if (!bookings.some((booking) => booking.id === id)) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
+  const booking = bookings.find((item) => item.id === id);
+  if (!booking) throw Object.assign(new Error("Rezervacija nije pronađena."), { status: 404 });
+  await recordAttendance(store, booking);
   const nextBookings = bookings.filter((booking) => booking.id !== id);
   await store.setJSON(BOOKINGS_KEY, nextBookings);
 }

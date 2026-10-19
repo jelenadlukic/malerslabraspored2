@@ -9,6 +9,7 @@
   const MONTHS_GENITIVE = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
   const TEACHER_AUTH_URL = "/.netlify/functions/teacher-auth";
   const BOOKINGS_URL = "/.netlify/functions/bookings";
+  const ATTENDANCE_URL = "/.netlify/functions/attendance";
   const EQUIPMENT = [
     { category: "tools", name: "Kombinovana testera GTM 12 JL Professional", quantity: 1, image: "./assets/equipment/gtm-12-jl.png" },
     { category: "tools", name: "Akumulatorski set GDX 18V-200 + GSR 18V-50", quantity: 1, image: "./assets/equipment/gdx-gsr-set.png" },
@@ -74,6 +75,9 @@
   const toast = document.querySelector("#toast");
   const toastCopy = document.querySelector("#toast-copy");
   const equipmentList = document.querySelector("#equipment-list");
+  const attendanceList = document.querySelector("#attendance-list");
+  const attendanceMessage = document.querySelector("#attendance-message");
+  const attendanceSearch = document.querySelector("#attendance-search");
   const passwordInput = document.querySelector("#teacher-password");
   const passwordToggle = document.querySelector("#password-toggle");
   const pageLinks = [...document.querySelectorAll("[data-page-link]")];
@@ -83,6 +87,8 @@
   let currentWeek = 0;
   let mobileDay = 0;
   let bookings = [];
+  let attendanceRecords = [];
+  let attendanceLoaded = false;
   let openingMonday = currentMonday();
   let today = startOfDay(new Date());
   let closingDate = addDays(today, 14);
@@ -163,11 +169,12 @@
   }
 
   function pageFromHash() {
-    return window.location.hash === "#oprema" ? "oprema" : "raspored";
+    const page = window.location.hash.slice(1);
+    return ["oprema", "prisustvo"].includes(page) ? page : "raspored";
   }
 
   function showPage(page, { updateHash = true } = {}) {
-    const target = page === "oprema" ? "oprema" : "raspored";
+    const target = ["oprema", "prisustvo"].includes(page) ? page : "raspored";
     pageViews.forEach((view) => { view.hidden = view.dataset.page !== target; });
     pageLinks.forEach((link) => {
       const active = link.dataset.pageLink === target;
@@ -176,8 +183,10 @@
       else link.removeAttribute("aria-current");
     });
     if (updateHash && window.location.hash !== `#${target}`) history.pushState(null, "", `#${target}`);
-    document.title = target === "oprema" ? "Oprema | Mejkers Lab" : "Raspored | Mejkers Lab";
+    const titles = { raspored: "Raspored | Mejkers Lab", oprema: "Oprema | Mejkers Lab", prisustvo: "Prisustvo | Mejkers Lab" };
+    document.title = titles[target];
     window.scrollTo({ top: 0, behavior: "auto" });
+    if (target === "prisustvo" && !attendanceLoaded) loadAttendance().catch(() => {});
   }
 
   async function checkSession() {
@@ -213,6 +222,25 @@
       throw error;
     } finally {
       scheduleShell.classList.remove("is-loading");
+    }
+  }
+
+  async function loadAttendance({ silent = false } = {}) {
+    if (!silent) attendanceMessage.textContent = "Učitavanje evidencije…";
+    try {
+      const data = await api(ATTENDANCE_URL);
+      attendanceRecords = Array.isArray(data.bookings) ? data.bookings : [];
+      attendanceLoaded = true;
+      attendanceMessage.textContent = "";
+      renderAttendance();
+      return data;
+    } catch (error) {
+      if (error.status === 401) {
+        showLogin();
+        return null;
+      }
+      attendanceMessage.textContent = error.message || "Evidencija trenutno nije dostupna.";
+      throw error;
     }
   }
 
@@ -344,6 +372,40 @@
     document.querySelector("#equipment-total").textContent = String(EQUIPMENT.reduce((sum, item) => sum + item.quantity, 0));
   }
 
+  function renderAttendance() {
+    const query = attendanceSearch.value.trim().toLowerCase();
+    const filtered = attendanceRecords.filter((booking) => {
+      const searchable = `${booking.teacher || ""} ${booking.purpose || ""} ${(booking.slots || []).join(" ")}`.toLowerCase();
+      return !query || searchable.includes(query);
+    });
+    const slotCount = attendanceRecords.reduce((sum, booking) => sum + (Array.isArray(booking.slots) ? booking.slots.length : 0), 0);
+    const studentCount = attendanceRecords.reduce((sum, booking) => sum + (Number(booking.students) || 0), 0);
+    document.querySelector("#attendance-booking-count").textContent = String(attendanceRecords.length);
+    document.querySelector("#attendance-slot-count").textContent = String(slotCount);
+    document.querySelector("#attendance-student-count").textContent = String(studentCount);
+
+    if (!filtered.length) {
+      attendanceList.innerHTML = `<tr><td class="attendance-empty" colspan="4">${attendanceRecords.length ? "Nema rezultata za ovu pretragu." : "Još nema sačuvanih rezervacija."}</td></tr>`;
+      return;
+    }
+
+    attendanceList.innerHTML = filtered.map((booking) => `
+      <tr>
+        <td data-label="Termin"><div class="attendance-slots">${(booking.slots || []).map((slot) => `<span>${escapeHtml(labelForSlot(slot))}</span>`).join("")}</div></td>
+        <td data-label="Nastavnik"><strong>${escapeHtml(booking.teacher || "—")}</strong></td>
+        <td data-label="Svrha">${escapeHtml(booking.purpose || "—")}</td>
+        <td data-label="Učenici"><span class="attendance-students">${Number(booking.students) || 0}</span></td>
+      </tr>
+    `).join("");
+  }
+
+  function upsertAttendanceRecord(booking) {
+    attendanceRecords = [...attendanceRecords.filter((item) => item.id !== booking.id), booking]
+      .sort((left, right) => String(right.slots?.[0] || "").localeCompare(String(left.slots?.[0] || "")));
+    attendanceLoaded = true;
+    renderAttendance();
+  }
+
   function labelForSlot(id) {
     const [year, month, day, hour] = id.split("-").map(Number);
     return formatSlot(new Date(year, month - 1, day), hour);
@@ -398,6 +460,7 @@
     try {
       const booking = await requestBooking(payload);
       bookings.push(booking);
+      upsertAttendanceRecord(booking);
       bookingDialog.close();
       bookingForm.reset();
       selected = [];
@@ -481,6 +544,8 @@
   document.querySelector("#logout-button").addEventListener("click", async () => {
     await api(TEACHER_AUTH_URL, { method: "DELETE" }).catch(() => {});
     bookings = [];
+    attendanceRecords = [];
+    attendanceLoaded = false;
     selected = [];
     showLogin();
     loginForm.elements.username.focus();
@@ -507,6 +572,7 @@
     });
     renderEquipment();
   });
+  attendanceSearch.addEventListener("input", renderAttendance);
   prevWeek.addEventListener("click", () => { if (currentWeek > minWeekOffset()) { currentWeek -= 1; mobileDay = currentWeek === minWeekOffset() ? defaultMobileDay() : 0; render(); } });
   nextWeek.addEventListener("click", () => { if (currentWeek < maxWeekOffset()) { currentWeek += 1; mobileDay = 0; render(); } });
   weekLabel.addEventListener("click", () => { currentWeek = minWeekOffset(); mobileDay = defaultMobileDay(); render(); });
@@ -518,5 +584,6 @@
   window.addEventListener("resize", () => { if (!appContent.hidden) render(); });
 
   renderEquipment();
+  renderAttendance();
   checkSession();
 })();

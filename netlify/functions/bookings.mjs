@@ -2,6 +2,7 @@ import { getStore } from "@netlify/blobs";
 import { randomUUID } from "node:crypto";
 import { requestOriginIsValid } from "./_shared/admin-session.mjs";
 import { getTeacherSession } from "./_shared/teacher-session.mjs";
+import { recordAttendance } from "./_shared/attendance-store.mjs";
 import {
   allowedSlotIds,
   formatDateOnly,
@@ -76,6 +77,11 @@ async function createBooking(body) {
       throw Object.assign(new Error("Jedan od termina je upravo rezervisan. Osveži raspored i izaberi drugi."), { status: 409 });
     }
     await store.setJSON(BOOKINGS_KEY, [...latestBookings, booking]);
+  }
+  try {
+    await recordAttendance(store, booking);
+  } catch (error) {
+    console.error("Rezervacija je sačuvana, ali arhiva nije odmah ažurirana.", error);
   }
   return booking;
 }

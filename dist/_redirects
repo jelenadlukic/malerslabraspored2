@@ -2,5 +2,6 @@
 /api/admin/session    /.netlify/functions/admin-auth    200
 /api/admin/bookings   /.netlify/functions/admin-bookings 200
 /api/bookings         /.netlify/functions/bookings       200
+/api/attendance       /.netlify/functions/attendance     200
 /adminpanel            /adminpanel.html                    200
 /adminpanel/           /adminpanel.html                    200
