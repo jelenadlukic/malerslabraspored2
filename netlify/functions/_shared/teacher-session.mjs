@@ -4,9 +4,9 @@ const COOKIE_NAME = "ml_teacher_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 const REMEMBERED_SESSION_SECONDS = 30 * 24 * 60 * 60;
 const USERS = new Map([
-  ["nastavnik", { role: "teacher", passwordHash: "85debf5bace9bf38f0d8fafd243d5ac91f375bbe43bd8a80710fbbc5aca8529c" }],
-  ["direktor", { role: "admin", passwordHash: "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60" }],
-  ["koordinator", { role: "admin", passwordHash: "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60" }]
+  ["nastavnik", { role: "teacher", passwordHashes: ["85debf5bace9bf38f0d8fafd243d5ac91f375bbe43bd8a80710fbbc5aca8529c"] }],
+  ["direktor", { role: "admin", passwordHashes: ["316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60", "3ced2186ae1ccaafd62acea9a7bce07cbc297e2bc778f5451ad724f1acf9f40c"] }],
+  ["koordinator", { role: "admin", passwordHashes: ["316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60", "3ced2186ae1ccaafd62acea9a7bce07cbc297e2bc778f5451ad724f1acf9f40c"] }]
 ]);
 
 function safeEqual(left, right) {
@@ -17,7 +17,7 @@ function safeEqual(left, right) {
 }
 
 function sessionSecret() {
-  const passwordHashes = [...USERS.values()].map((user) => user.passwordHash).join(":");
+  const passwordHashes = [...USERS.values()].flatMap((user) => user.passwordHashes).join(":");
   return process.env.TEACHER_SESSION_SECRET || `mejkers-lab:${passwordHashes}`;
 }
 
@@ -43,8 +43,8 @@ export function authenticateUser(username, password) {
   const normalizedUser = String(username || "").trim().toLowerCase();
   const user = USERS.get(normalizedUser);
   if (!user) return null;
-  const passwordHash = createHash("sha256").update(String(password || "")).digest("hex");
-  if (!safeEqual(passwordHash, user.passwordHash)) return null;
+  const passwordHash = createHash("sha256").update(String(password || "").trim()).digest("hex");
+  if (!user.passwordHashes.some((expectedHash) => safeEqual(passwordHash, expectedHash))) return null;
   return { username: normalizedUser, role: user.role };
 }
 

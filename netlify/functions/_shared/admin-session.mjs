@@ -3,7 +3,10 @@ import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 const COOKIE_NAME = "ml_admin_session";
 const SESSION_SECONDS = 8 * 60 * 60;
 const ALLOWED_USERS = new Set(["direktor", "koordinator"]);
-const PASSWORD_HASH = "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60";
+const PASSWORD_HASHES = [
+  "316b2a34a99ff042202aa422ff8d6bcc9321f4495871e5660df8deb5b4935e60",
+  "3ced2186ae1ccaafd62acea9a7bce07cbc297e2bc778f5451ad724f1acf9f40c"
+];
 
 function safeEqual(left, right) {
   const leftBuffer = Buffer.from(String(left));
@@ -13,7 +16,7 @@ function safeEqual(left, right) {
 }
 
 function getSecret() {
-  return process.env.ADMIN_SESSION_SECRET || PASSWORD_HASH;
+  return process.env.ADMIN_SESSION_SECRET || PASSWORD_HASHES.join(":");
 }
 
 function signature(value, secret) {
@@ -41,8 +44,8 @@ export function passwordIsConfigured() {
 
 export function credentialsAreValid(username, password) {
   const normalizedUser = String(username || "").trim().toLowerCase();
-  const passwordHash = createHash("sha256").update(String(password || "")).digest("hex");
-  return ALLOWED_USERS.has(normalizedUser) && safeEqual(passwordHash, PASSWORD_HASH);
+  const passwordHash = createHash("sha256").update(String(password || "").trim()).digest("hex");
+  return ALLOWED_USERS.has(normalizedUser) && PASSWORD_HASHES.some((expectedHash) => safeEqual(passwordHash, expectedHash));
 }
 
 export function createSessionCookie(username, request) {
