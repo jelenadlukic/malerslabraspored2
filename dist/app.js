@@ -306,7 +306,7 @@
           action = `Prikaži rezervaciju: ${booking.teacher}`;
         } else if (outside || past) {
           className += outside && startOfDay(date) > startOfDay(closingDate) ? " closed" : " past";
-          label = outside && startOfDay(date) > startOfDay(closingDate) ? "Van perioda" : "Prošlo";
+          label = outside && startOfDay(date) > startOfDay(closingDate) ? "Van perioda" : "Nedostupno";
           action = label;
           disabled = " disabled";
         } else if (reserved) {
