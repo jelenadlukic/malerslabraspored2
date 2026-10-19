@@ -7,7 +7,8 @@
   const DAY_SHORT = ["Pon", "Uto", "Sre", "Čet", "Pet"];
   const MONTHS = ["januar", "februar", "mart", "april", "maj", "jun", "jul", "avgust", "septembar", "oktobar", "novembar", "decembar"];
   const MONTHS_GENITIVE = ["januara", "februara", "marta", "aprila", "maja", "juna", "jula", "avgusta", "septembra", "oktobra", "novembra", "decembra"];
-  const TEACHER_AUTH_URL = "/api/teacher/session";
+  const TEACHER_AUTH_URL = "/.netlify/functions/teacher-auth";
+  const BOOKINGS_URL = "/.netlify/functions/bookings";
   const EQUIPMENT = [
     { category: "tools", name: "Kombinovana testera GTM 12 JL Professional", quantity: 1, image: "./assets/equipment/gtm-12-jl.png" },
     { category: "tools", name: "Akumulatorski set GDX 18V-200 + GSR 18V-50", quantity: 1, image: "./assets/equipment/gdx-gsr-set.png" },
@@ -45,7 +46,9 @@
     { category: "furniture", name: "MICKE radni sto, bela, 105 × 50 cm", quantity: 1, image: "./assets/furniture/micke-desk.jpg" },
     { category: "furniture", name: "LÄKTARE konferencijska stolica, brezov furnir/crna", quantity: 1, image: "./assets/furniture/laktare-chair.jpg" },
     { category: "furniture", name: "BJÖRKÅSEN postolje za laptop, boja antracita", quantity: 1, image: "./assets/furniture/bjorkasen.jpg" },
-    { category: "furniture", name: "TJUSIG vešalica za vrata/zid, bela, 60 cm", quantity: 3, image: "./assets/furniture/tjusig.jpg" }
+    { category: "furniture", name: "TJUSIG vešalica za vrata/zid, bela, 60 cm", quantity: 3, image: "./assets/furniture/tjusig.jpg" },
+    { category: "furniture", name: "Crni lejzi beg", quantity: 2, image: "./assets/furniture/black-bean-bag.webp" },
+    { category: "furniture", name: "Pokretni nosač za televizor", quantity: 1, image: "./assets/furniture/mobile-tv-stand.webp" }
   ];
 
   const loginView = document.querySelector("#login-view");
@@ -190,7 +193,7 @@
   async function loadBookings({ silent = false } = {}) {
     if (!silent) scheduleShell.classList.add("is-loading");
     try {
-      const data = await api("/api/bookings");
+      const data = await api(BOOKINGS_URL);
       bookings = Array.isArray(data.bookings) ? data.bookings : [];
       if (data.openingMonday) openingMonday = parseIsoDate(data.openingMonday);
       if (data.today) today = parseIsoDate(data.today);
@@ -365,7 +368,7 @@
   }
 
   async function requestBooking(payload) {
-    const response = await fetch("/api/bookings", {
+    const response = await fetch(BOOKINGS_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify(payload)

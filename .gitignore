@@ -2,4 +2,6 @@ node_modules/
 .netlify/
 .sites-runtime/
 .test-data/
+tmp/
+output/
 .env
